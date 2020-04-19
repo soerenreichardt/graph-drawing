@@ -47,10 +47,9 @@ public class CoordinateWrappedTree<DATA, TREE extends AbstractTree<DATA, TREE>> 
         tree.traverse(TraverseStrategy.BREADTH_FIRST, (t) -> {
             if (t.children() != null) {
                 t.children().forEach((child) -> {
-                    T treeChild = (T) child;
-                    CoordinateWrappedTree<D, T> copyParent = treeMapping.get(treeChild.parent());
-                    CoordinateWrappedTree<D, T> copyChild = copyParent.addChild(treeChild.data());
-                    treeMapping.put(treeChild, copyChild);
+                    CoordinateWrappedTree<D, T> copyParent = treeMapping.get(child.parent());
+                    CoordinateWrappedTree<D, T> copyChild = copyParent.addChild(child.data());
+                    treeMapping.put(child, copyChild);
                 });
             }
         });
