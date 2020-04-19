@@ -37,9 +37,25 @@ public class TreeTest {
         child1.addChild("child1.2");
 
         List<String> actual = new ArrayList<>();
-        tree.traverse(TraverseStrategy.BREADTH_FIRST, (t) -> actual.add((String) t.data));
+        tree.traverse(TraverseStrategy.BREADTH_FIRST, (t) -> actual.add(t.data));
 
         String[] expected = new String[]{ "root", "child1", "child2", "child1.1", "child1.2" };
+        assertArrayEquals(expected, actual.toArray());
+    }
+
+    @Test
+    public void shouldTraverseWithBfsReversed() {
+        Tree<String> tree = new Tree("root");
+        Tree<String> child1 = tree.addChild("child1");
+        tree.addChild("child2");
+
+        child1.addChild("child1.1");
+        child1.addChild("child1.2");
+
+        List<String> actual = new ArrayList<>();
+        tree.traverse(TraverseStrategy.BREADTH_FIRST_REVERSE, (t) -> actual.add(t.data));
+
+        String[] expected = new String[]{ "root", "child2", "child1", "child1.2", "child1.1" };
         assertArrayEquals(expected, actual.toArray());
     }
 
@@ -53,9 +69,59 @@ public class TreeTest {
         child1.addChild("child1.2");
 
         List<String> actual = new ArrayList<>();
-        tree.traverse(TraverseStrategy.DEPTH_FIRST, (t) -> actual.add((String) t.data));
+        tree.traverse(TraverseStrategy.DEPTH_FIRST, (t) -> actual.add(t.data));
 
         String[] expected = new String[]{ "root", "child1", "child1.1", "child1.2", "child2" };
         assertArrayEquals(expected, actual.toArray());
+    }
+
+    @Test
+    public void shouldTraverseWithDfsReversed() {
+        Tree<String> tree = new Tree("root");
+        Tree<String> child1 = tree.addChild("child1");
+        tree.addChild("child2");
+
+        child1.addChild("child1.1");
+        child1.addChild("child1.2");
+
+        List<String> actual = new ArrayList<>();
+        tree.traverse(TraverseStrategy.DEPTH_FIRST_REVERSE, (t) -> actual.add(t.data));
+
+        String[] expected = new String[]{ "root", "child2", "child1", "child1.2", "child1.1" };
+        assertArrayEquals(expected, actual.toArray());
+    }
+
+    @Test
+    public void shouldTraverseWithPostOrder() {
+        Tree<String> tree = new Tree("root");
+        Tree<String> child1 = tree.addChild("child1");
+        tree.addChild("child2");
+
+        child1.addChild("child1.1");
+        child1.addChild("child1.2");
+
+        List<String> actual = new ArrayList<>();
+        tree.traverse(TraverseStrategy.POST_ORDER, (t) -> actual.add(t.data));
+
+        String[] expected = new String[]{ "child1.1", "child1.2", "child1", "child2", "root" };
+        assertArrayEquals(expected, actual.toArray());
+    }
+
+    @Test
+    public void shouldGetLeftAndRightMostNodes() {
+        Tree<String> tree = new Tree("root");
+        Tree<String> child1 = tree.addChild("child1");
+        Tree<String> child2 = tree.addChild("child2");
+
+        Tree<String> child11 = child1.addChild("child1.1");
+        Tree<String> child12 = child1.addChild("child1.2");
+
+        assertEquals(child1, tree.getLeftmost(1).get());
+        assertEquals(child2, tree.getRightmost(1).get());
+        assertEquals(child11, tree.getLeftmost(2).get());
+        assertEquals(child12, child1.getRightmost(2).get());
+
+        assertEquals(child11, tree.getLeftmost(-1).get());
+        assertEquals(child2, tree.getRightmost(-1).get());
     }
 }
