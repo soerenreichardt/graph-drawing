@@ -1,11 +1,7 @@
 package tree;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.Queue;
-import java.util.Stack;
+import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.function.Supplier;
 
 public abstract class AbstractTree<DATA, TREE extends AbstractTree<DATA, TREE>> {
 
@@ -21,6 +17,7 @@ public abstract class AbstractTree<DATA, TREE extends AbstractTree<DATA, TREE>> 
 
     protected TREE parent;
     protected List<TREE> children;
+    protected TREE leftSibling;
 
     protected final int level;
 
@@ -36,7 +33,18 @@ public abstract class AbstractTree<DATA, TREE extends AbstractTree<DATA, TREE>> 
         }
     }
 
-    public abstract TREE addChild(DATA data);
+    public TREE addChild(DATA data) {
+        TREE child = createTreeNode(data);
+        if (this.children == null) {
+            this.children = new ArrayList<>();
+        } else {
+            child.leftSibling = this.children.get(this.children.size() - 1);
+        }
+        this.children().add(child);
+        return child;
+    }
+
+    protected abstract TREE createTreeNode(DATA data);
 
     public void traverse(TraverseStrategy traverseStrategy, TreeVisitor<DATA, TREE> visitor) {
         switch (traverseStrategy) {
@@ -73,6 +81,10 @@ public abstract class AbstractTree<DATA, TREE extends AbstractTree<DATA, TREE>> 
 
     public List<TREE> children() {
         return this.children;
+    }
+
+    public TREE leftSibling() {
+        return this.leftSibling;
     }
 
     public int level() {

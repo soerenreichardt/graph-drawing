@@ -9,7 +9,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class CoordinateWrappedTree<DATA, TREE extends AbstractTree<DATA, TREE>> extends AbstractTree<DATA, CoordinateWrappedTree<DATA, TREE>> {
 
     Point2D.Float location;
-    CoordinateWrappedTree<DATA, TREE> leftSibling;
 
     public float preliminaryX;
     public float modifier;
@@ -25,15 +24,8 @@ public class CoordinateWrappedTree<DATA, TREE extends AbstractTree<DATA, TREE>> 
     }
 
     @Override
-    public CoordinateWrappedTree<DATA, TREE> addChild(DATA data) {
-        CoordinateWrappedTree<DATA, TREE> child = new CoordinateWrappedTree<>(data, this);
-        if (this.children == null) {
-            this.children = new ArrayList<>();
-        } else {
-            child.leftSibling = this.children.get(this.children.size() - 1);
-        }
-        this.children().add(child);
-        return child;
+    protected CoordinateWrappedTree<DATA, TREE> createTreeNode(DATA data) {
+        return new CoordinateWrappedTree<>(data, this);
     }
 
     public Point2D.Float location() {
@@ -53,8 +45,10 @@ public class CoordinateWrappedTree<DATA, TREE extends AbstractTree<DATA, TREE>> 
         List<CoordinateWrappedTree<DATA, TREE>> maybeResult = new ArrayList<>(1);
         maybeResult.add(null);
         traverse(TraverseStrategy.BREADTH_FIRST_REVERSE, (t) -> {
+            if (node == null) return false;
             if (t.level() == node.level() && t != node && nodeSeen.get()) {
                 maybeResult.set(0, t);
+                return false;
             }
             if (t == node) {
                 nodeSeen.set(true);
