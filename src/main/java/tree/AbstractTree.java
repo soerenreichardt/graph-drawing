@@ -91,6 +91,13 @@ public abstract class AbstractTree<DATA, TREE extends AbstractTree<DATA, TREE>> 
         return this.level;
     }
 
+    public int maxDepth() {
+        TREE tree = (TREE) this;
+        if (tree.children() == null) return 1;
+
+        return tree.children().stream().mapToInt(AbstractTree::maxDepth).max().getAsInt() + 1;
+    }
+
     public TREE getLeftChild() {
         return this.children.get(0);
     }
@@ -100,11 +107,11 @@ public abstract class AbstractTree<DATA, TREE extends AbstractTree<DATA, TREE>> 
     }
 
     public Optional<TREE> getLeftmost(int targetLevel) {
-        return getLeftOrRightMost(targetLevel, this::getLeftChild);
+        return getLeftOrRightMost(targetLevel, true);
     }
 
     public Optional<TREE> getRightmost(int targetLevel) {
-        return getLeftOrRightMost(targetLevel, this::getRightChild);
+        return getLeftOrRightMost(targetLevel, false);
     }
 
     void depthFirstTraversal(TreeVisitor visitor, boolean reverseChildren) {
@@ -144,39 +151,38 @@ public abstract class AbstractTree<DATA, TREE extends AbstractTree<DATA, TREE>> 
     }
 
     void postOrderTraversal(TreeVisitor visitor) {
-        Stack<TREE> visitNext = new Stack<>();
-        Stack<TREE> visitStack = new Stack<>();
-        visitNext.push((TREE) this);
-        visitStack.push((TREE) this);
-        while (!visitNext.empty()) {
-            TREE head = visitNext.pop();
-            if (head.children != null) {
-                for (int i = head.children.size()-1; i >= 0; i--) {
-                    TREE child = head.children.get(i);
-                    visitNext.push(child);
-                    visitStack.push(child);
-                }
+        TREE tree = (TREE) this;
+        if (tree.children() != null) {
+            for (int i = 0; i < tree.children().size(); i++) {
+                tree.children().get(i).postOrderTraversal(visitor);
             }
         }
-        while (!visitStack.isEmpty()) {
-            if (!visitor.accept(visitStack.pop())) return;
-        }
+        visitor.accept(tree);
     }
 
-    private Optional<TREE> getLeftOrRightMost(int targetLevel, Supplier<TREE> supplier) {
+    private Optional<TREE> getLeftOrRightMost(int targetLevel, boolean isLeftMost) {
+        targetLevel = targetLevel == -1 ? maxDepth() - 1 : targetLevel;
         if (targetLevel <= this.level && targetLevel != -1) {
             throw new IllegalArgumentException("Parameter targetLevel must be greater than the current level");
         }
-        if (this.children == null) {
-            if (targetLevel == -1) {
-                return Optional.of((TREE) this);
-            }
-            return Optional.empty();
-        }
-        if(this.level == targetLevel - 1) {
-            return Optional.of(supplier.get());
-        }
 
-        return supplier.get().getLeftmost(targetLevel);
+        Stack<TREE> visitNext = new Stack<>();
+        visitNext.push((TREE) this);
+        while (!visitNext.empty()) {
+            TREE head = visitNext.pop();
+            if (head.level() == targetLevel) {
+                return Optional.of(head);
+            }
+            if (head.children != null) {
+                for (int i = 0; i < head.children.size(); i++) {
+                    int index = isLeftMost
+                            ? head.children.size() - i - 1
+                            : i;
+                    TREE child = head.children.get(index);
+                    visitNext.push(child);
+                }
+            }
+        }
+        return Optional.empty();
     }
 }
