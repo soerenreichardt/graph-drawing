@@ -1,17 +1,19 @@
 package ui;
 
 import algorithm.CoordinateWrappedTree;
+import org.apache.commons.lang3.mutable.MutableFloat;
 import tree.AbstractTree.TraverseStrategy;
 
 import javax.swing.*;
 import java.awt.*;
 
+import static ui.TreeDrawer.LEVEL_OFFSET;
+import static ui.TreeDrawer.NODE_SIZE;
+
 public class DrawWindow extends Canvas {
 
-    public static final int NODE_SIZE = 40;
-
     final JFrame frame;
-    private CoordinateWrappedTree<?, ?> tree;
+    private final CoordinateWrappedTree<?, ?> tree;
 
     public DrawWindow(int width, int height, CoordinateWrappedTree<?, ?> tree) {
         this.tree = tree;
@@ -23,29 +25,19 @@ public class DrawWindow extends Canvas {
         this.frame.pack();
         this.frame.setVisible(true);
         this.frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        MutableFloat maxXValue = new MutableFloat(0.0f);
+        tree.traverse(TraverseStrategy.BREADTH_FIRST, (t) -> {
+            if (t.location().x > maxXValue.floatValue()) {
+                maxXValue.setValue(t.location().x);
+            }
+            return true;
+        });
+        frame.setSize((maxXValue.intValue() + 1) * NODE_SIZE, (tree.maxDepth() + 2) * (LEVEL_OFFSET + NODE_SIZE));
     }
 
     @Override
     public void paint(Graphics g) {
-        float minX = tree.getLeftmost(-1).get().location().x;
-        float maxX = tree.getRightmost(-1).get().location().x;
-
-        Dimension windowSize = this.getSize();
-
-        int centerOffset = (windowSize.width / 2) - ( 2 * (int)(maxX - minX));
-
-        tree.traverse(TraverseStrategy.BREADTH_FIRST, (t) -> {
-            int xPosition = (int) t.location().x * NODE_SIZE + centerOffset;
-            int yPosition = (int) t.location().y * NODE_SIZE;
-            g.fillOval(xPosition, yPosition, NODE_SIZE, NODE_SIZE);
-
-            int lineOffset = NODE_SIZE / 2;
-            if (t.parent() != null) {
-                int parentXPosition = (int) t.parent().location().x * NODE_SIZE + lineOffset + centerOffset;
-                int parentYPosition = (int) t.parent().location().y * NODE_SIZE + lineOffset;
-                g.drawLine(xPosition + lineOffset, yPosition + lineOffset, parentXPosition, parentYPosition);
-            }
-            return true;
-        });
+        TreeDrawer.drawTree(tree, g);
     }
 }
