@@ -17,7 +17,7 @@ public class DrawWindow extends Canvas {
 
     public DrawWindow(int width, int height, CoordinateWrappedTree<?, ?> tree) {
         this.tree = tree;
-        this.frame = new JFrame("Hello");
+        this.frame = new JFrame("Walker algorithm");
 
         this.setSize(width, height);
 
@@ -38,6 +38,11 @@ public class DrawWindow extends Canvas {
 
     @Override
     public void paint(Graphics g) {
-        TreeDrawer.drawTree(tree, g);
+        Graphics2D graphics2D = (Graphics2D)g;
+        graphics2D.setRenderingHint(
+                RenderingHints.KEY_ANTIALIASING,
+                RenderingHints.VALUE_ANTIALIAS_ON);
+
+        TreeDrawer.drawTree(tree, graphics2D);
     }
 }
