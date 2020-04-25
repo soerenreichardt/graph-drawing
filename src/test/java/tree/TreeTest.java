@@ -137,6 +137,6 @@ public class TreeTest {
         assertEquals(child12, child1.getRightmost(2).get());
 
         assertEquals(child11, tree.getLeftmost(-1).get());
-        assertEquals(child2, tree.getRightmost(-1).get());
+        assertEquals(child12, tree.getRightmost(-1).get());
     }
 }

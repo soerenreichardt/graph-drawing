@@ -34,12 +34,16 @@ public abstract class AbstractTree<DATA, TREE extends AbstractTree<DATA, TREE>> 
     }
 
     public TREE addChild(DATA data) {
-        TREE child = createTreeNode(data);
+        return addChild(createTreeNode(data));
+    }
+
+    public TREE addChild(TREE child) {
         if (this.children == null) {
             this.children = new ArrayList<>();
         } else {
             child.leftSibling = this.children.get(this.children.size() - 1);
         }
+        child.parent = (TREE) this;
         this.children().add(child);
         return child;
     }
