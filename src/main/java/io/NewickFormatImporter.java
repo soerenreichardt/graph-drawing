@@ -89,9 +89,11 @@ public class NewickFormatImporter {
                     break;
                 case DISTANCE_DELIMITER:
                     parsedObject = new DistanceValue();
+                    maybeAddEmptyNode(parsedObjects);
                     break;
                 case STOP_TOKEN:
                     parsedObject = new Stop();
+                    maybeAddEmptyNode(parsedObjects);
                     break;
                 default:
                     parsedObject = new NodeName();
@@ -109,8 +111,10 @@ public class NewickFormatImporter {
                 .collect(Collectors.toList());
     }
 
-    public String getFileContent() {
-        return fileContent;
+    private void maybeAddEmptyNode(List<ParsedObject> parsedObjects) {
+        if (!parsedObjects.get(parsedObjects.size() - 1).equals(NodeName.class)) {
+            parsedObjects.add(new NodeName());
+        }
     }
 
     public static abstract class ParsedObject {
