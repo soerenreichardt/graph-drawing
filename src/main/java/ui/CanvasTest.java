@@ -4,15 +4,7 @@ import algorithm.CoordinateWrappedTree;
 import algorithm.Walker;
 import tree.Tree;
 
-import java.awt.*;
-import java.util.concurrent.ExecutorService;
-
 public class CanvasTest {
-
-    public static int TARGET_FPS = 60;
-    public static int MS_PER_SECOND = 1000;
-    public static int TIME_PER_FRAME = TARGET_FPS / MS_PER_SECOND;
-
 
     public static void main(String[] args) {
         Tree<String> tree = new Tree<>("root");
@@ -39,7 +31,7 @@ public class CanvasTest {
         CoordinateWrappedTree<String, Tree<String>> coordinateTree = CoordinateWrappedTree.from(tree);
         Walker<String, CoordinateWrappedTree<String, Tree<String>>> walkerAlgorithm = new Walker<>(coordinateTree);
         CoordinateWrappedTree<String, CoordinateWrappedTree<String, Tree<String>>> computeResult = walkerAlgorithm.compute();
-        DrawWindow window = new DrawWindow(400, 400, computeResult);
+        new DrawWindow(400, 400, computeResult);
 
     }
 }
