@@ -1,6 +1,6 @@
 package ui;
 
-import algorithm.CoordinateWrappedTree;
+import algorithm.CoordinateTree;
 import tree.AbstractTree;
 
 import java.awt.*;
@@ -10,7 +10,7 @@ public class TreeDrawer {
     public static final int NODE_SIZE = 40;
     public static final int LEVEL_OFFSET = 15;
 
-    public static void drawTree(CoordinateWrappedTree<?, ?> tree, Graphics2D g) {
+    public static void drawTree(CoordinateTree<?, ?> tree, Graphics2D g) {
         tree.traverse(AbstractTree.TraverseStrategy.BREADTH_FIRST, (t) -> {
             int xPosition = (int) t.location().x * NODE_SIZE;
             int yPosition = (int) t.location().y * (NODE_SIZE + LEVEL_OFFSET);

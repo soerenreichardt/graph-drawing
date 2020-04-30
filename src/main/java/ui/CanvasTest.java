@@ -1,6 +1,6 @@
 package ui;
 
-import algorithm.CoordinateWrappedTree;
+import algorithm.CoordinateTree;
 import algorithm.Walker;
 import tree.Tree;
 
@@ -28,9 +28,9 @@ public class CanvasTest {
         m.addChild("K");
         m.addChild("L");
 
-        CoordinateWrappedTree<String, Tree<String>> coordinateTree = CoordinateWrappedTree.from(tree);
-        Walker<String, CoordinateWrappedTree<String, Tree<String>>> walkerAlgorithm = new Walker<>(coordinateTree);
-        CoordinateWrappedTree<String, CoordinateWrappedTree<String, Tree<String>>> computeResult = walkerAlgorithm.compute();
+        CoordinateTree<String, Tree<String>> coordinateTree = CoordinateTree.from(tree);
+        Walker<String, CoordinateTree<String, Tree<String>>> walkerAlgorithm = new Walker<>(coordinateTree);
+        CoordinateTree<String, CoordinateTree<String, Tree<String>>> computeResult = walkerAlgorithm.compute();
         new DrawWindow(400, 400, computeResult);
 
     }

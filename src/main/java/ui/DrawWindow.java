@@ -1,6 +1,6 @@
 package ui;
 
-import algorithm.CoordinateWrappedTree;
+import algorithm.CoordinateTree;
 import org.apache.commons.lang3.mutable.MutableFloat;
 import tree.AbstractTree.TraverseStrategy;
 
@@ -13,9 +13,9 @@ import static ui.TreeDrawer.NODE_SIZE;
 public class DrawWindow extends Canvas {
 
     final JFrame frame;
-    private final CoordinateWrappedTree<?, ?> tree;
+    private final CoordinateTree<?, ?> tree;
 
-    public DrawWindow(int width, int height, CoordinateWrappedTree<?, ?> tree) {
+    public DrawWindow(int width, int height, CoordinateTree<?, ?> tree) {
         this.tree = tree;
         this.frame = new JFrame("Walker algorithm");
 

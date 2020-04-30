@@ -9,13 +9,13 @@ public class Walker<D, T extends AbstractTree<D, T>> {
     public static final float SUBTREE_SEPARATION = 4.0f;
     public static final float MEAN_NODE_SIZE = 2.0f;
 
-    private final CoordinateWrappedTree<D, T> tree;
+    private final CoordinateTree<D, T> tree;
 
     public Walker(T tree) {
-        this.tree = CoordinateWrappedTree.from(tree);
+        this.tree = CoordinateTree.from(tree);
     }
 
-    public CoordinateWrappedTree<D, T> compute() {
+    public CoordinateTree<D, T> compute() {
         firstWalk();
         setLocations();
         return tree;
@@ -45,9 +45,9 @@ public class Walker<D, T extends AbstractTree<D, T>> {
         });
     }
 
-    private void apportion(CoordinateWrappedTree<D, T> treeNode) {
-        CoordinateWrappedTree<D, T> leftMost = treeNode.getLeftChild();
-        CoordinateWrappedTree<D, T> leftNeighbor;
+    private void apportion(CoordinateTree<D, T> treeNode) {
+        CoordinateTree<D, T> leftMost = treeNode.getLeftChild();
+        CoordinateTree<D, T> leftNeighbor;
 
         int baseLevel = treeNode.level();
         for (int level = baseLevel; level < tree.maxDepth(); level++) {
@@ -55,8 +55,8 @@ public class Walker<D, T extends AbstractTree<D, T>> {
             if (leftMost == null || leftNeighbor == null) return;
             float leftModsum = 0.0f;
             float rightModsum = 0.0f;
-            CoordinateWrappedTree<D, T> ancestorLeftmost = leftMost;
-            CoordinateWrappedTree<D, T> ancestorNeighbor = leftNeighbor;
+            CoordinateTree<D, T> ancestorLeftmost = leftMost;
+            CoordinateTree<D, T> ancestorNeighbor = leftNeighbor;
             while(ancestorLeftmost != treeNode) {
                 ancestorLeftmost = ancestorLeftmost.parent();
                 ancestorNeighbor = ancestorNeighbor.parent();
@@ -72,7 +72,7 @@ public class Walker<D, T extends AbstractTree<D, T>> {
                     rightModsum);
 
             if (moveDistance > 0) {
-                CoordinateWrappedTree<D, T> tempNode = treeNode;
+                CoordinateTree<D, T> tempNode = treeNode;
                 int numLeftSiblings = 0;
                 while (tempNode != null && tempNode != ancestorNeighbor) {
                     numLeftSiblings++;
