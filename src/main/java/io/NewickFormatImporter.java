@@ -117,6 +117,25 @@ public class NewickFormatImporter {
         }
     }
 
+    private int readSequence(int position, String sequence) {
+        char current;
+        while (position < fileContent.length()) {
+            current = fileContent.charAt(position);
+            if (current == IGNORE_TOKENS) {
+                position++;
+                continue;
+            }
+
+            if (tokens.contains(current)) {
+                break;
+            }
+
+            sequence += current;
+            position++;
+        }
+        return position;
+    }
+
     public static abstract class ParsedObject {
         public int parse(int position) {
             return position;
@@ -150,24 +169,7 @@ public class NewickFormatImporter {
 
         @Override
         public int parse(int position) {
-            int i = position;
-            char current;
-            while (i < fileContent.length()) {
-                current = fileContent.charAt(i);
-                if (current == IGNORE_TOKENS) {
-                    i++;
-                    continue;
-                }
-
-                if (tokens.contains(current)) {
-                    break;
-                }
-
-                name += current;
-                i++;
-            }
-
-            return i - 1;
+            return readSequence(position, name) - 1;
         }
 
         @Override
@@ -182,24 +184,7 @@ public class NewickFormatImporter {
 
         @Override
         public int parse(int position) {
-            int i = position + 1; // position behind ':'
-            char current;
-            while (i < fileContent.length()) {
-                current = fileContent.charAt(i);
-                if (current == IGNORE_TOKENS) {
-                    i++;
-                    continue;
-                }
-
-                if (tokens.contains(current)) {
-                    break;
-                }
-
-                value += current;
-                i++;
-            }
-
-            return i - 1;
+            return readSequence(position + 1, value) - 1;
         }
 
         @Override
