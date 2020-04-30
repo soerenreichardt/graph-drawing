@@ -1,7 +1,5 @@
 package tree;
 
-import algorithm.CoordinateTree;
-
 import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -49,6 +47,10 @@ public abstract class AbstractTree<DATA, TREE extends AbstractTree<DATA, TREE>> 
         child.parent = (TREE) this;
         this.children().add(child);
         return child;
+    }
+
+    public boolean hasChildren() {
+        return children != null && !children.isEmpty();
     }
 
     protected abstract TREE createTreeNode(DATA data);

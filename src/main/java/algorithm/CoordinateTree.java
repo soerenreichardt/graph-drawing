@@ -13,14 +13,27 @@ public class CoordinateTree<DATA, TREE extends AbstractTree<DATA, TREE>> extends
     public float preliminaryX;
     public float modifier;
 
-    private CoordinateTree(TREE tree) {
-        super(tree.data(), null, null);
-        this.location = new Point2D.Float();
+    public float shift;
+    public float change;
+
+    public CoordinateTree<DATA, TREE> thread;
+    public CoordinateTree<DATA, TREE> ancestor;
+
+    protected CoordinateTree(TREE tree) {
+        this(tree.data(), null);
     }
 
-    private CoordinateTree(DATA data, CoordinateTree<DATA, TREE> parent) {
+    protected CoordinateTree(DATA data, CoordinateTree<DATA, TREE> parent) {
         super(data, parent, null);
         this.location = new Point2D.Float();
+
+        this.modifier = 0.0f;
+
+        this.shift = 0.0f;
+        this.change = 0.0f;
+
+        this.thread = null;
+        this.ancestor = this;
     }
 
     @Override
