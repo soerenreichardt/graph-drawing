@@ -1,7 +1,10 @@
 package tree;
 
+import algorithm.CoordinateTree;
+
 import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class AbstractTree<DATA, TREE extends AbstractTree<DATA, TREE>> {
 
@@ -89,6 +92,29 @@ public abstract class AbstractTree<DATA, TREE extends AbstractTree<DATA, TREE>> 
 
     public TREE leftSibling() {
         return this.leftSibling;
+    }
+
+    public Optional<TREE> getLeftNeighbor(TREE node) {
+        AtomicBoolean nodeSeen = new AtomicBoolean(false);
+        List<TREE> maybeResult = new ArrayList<>(1);
+        maybeResult.add(null);
+        traverse(TraverseStrategy.BREADTH_FIRST_REVERSE, (t) -> {
+            if (node == null) return false;
+            if (t.level() == node.level() && t != node && nodeSeen.get()) {
+                maybeResult.set(0, t);
+                return false;
+            }
+            if (t == node) {
+                nodeSeen.set(true);
+            }
+
+            return t.level() <= node.level();
+        });
+
+        TREE leftNeighbor = maybeResult.get(0);
+        return leftNeighbor == null
+                ? Optional.empty()
+                : Optional.of(leftNeighbor);
     }
 
     public int level() {
@@ -188,5 +214,22 @@ public abstract class AbstractTree<DATA, TREE extends AbstractTree<DATA, TREE>> 
             }
         }
         return Optional.empty();
+    }
+
+    public static <D, TREE_IN extends AbstractTree<D, TREE_IN>, TREE_OUT extends AbstractTree<D, TREE_OUT>> TREE_OUT from(TREE_IN tree, TREE_OUT root) {
+        Map<TREE_IN, TREE_OUT> treeMapping = new HashMap<>();
+        treeMapping.put(tree, root);
+
+        tree.traverse(TraverseStrategy.BREADTH_FIRST, (t) -> {
+            if (t.children() != null) {
+                t.children().forEach((child) -> {
+                    TREE_OUT copyParent = treeMapping.get(child.parent());
+                    TREE_OUT copyChild = copyParent.addChild(child.data());
+                    treeMapping.put(child, copyChild);
+                });
+            }
+            return true;
+        });
+        return root;
     }
 }
