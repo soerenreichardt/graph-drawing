@@ -57,4 +57,9 @@ public class CoordinateTree<DATA, TREE extends AbstractTree<DATA, TREE>> extends
         CoordinateTree<D, T> root = new CoordinateTree<>(tree);
         return from(tree, root);
     }
+
+    @Override
+    public String toString() {
+        return String.format("%s: (%s, %s)", data(), location().x + modifier, location().y);
+    }
 }
