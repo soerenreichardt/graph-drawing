@@ -1,5 +1,6 @@
 package io;
 
+import org.apache.commons.lang3.tuple.Pair;
 import tree.Tree;
 
 import java.io.File;
@@ -32,13 +33,17 @@ public class NewickFormatImporter {
         }
     }
 
+    NewickFormatImporter(String fileContent, boolean testOnly) {
+        this.fileContent = fileContent;
+    }
+
 
     public Tree<String> parse() {
-        List<ParsedObject> tokens = tokenize();
+        List<ParsedObject> tokens = filterTokens(tokenize());
 
         var tokensWithoutDistance = tokens
                 .stream()
-                .filter(token -> !token.getClass().getSimpleName().equals(DistanceValue.class.getSimpleName()))
+                .filter(token -> !token.getClass().getSimpleName().equals(NodeValue.class.getSimpleName()))
                 .collect(Collectors.toList());
 
         Stack<List<Tree<String>>> siblings = new Stack<>();
@@ -66,7 +71,7 @@ public class NewickFormatImporter {
         return currentRoot;
     }
 
-    private List<ParsedObject> tokenize() {
+    List<ParsedObject> tokenize() {
         List<ParsedObject> parsedObjects = new ArrayList<>();
 
         int position = 0;
@@ -88,7 +93,7 @@ public class NewickFormatImporter {
                     parsedObject = new SiblingSeparator();
                     break;
                 case DISTANCE_DELIMITER:
-                    parsedObject = new DistanceValue();
+                    parsedObject = new NodeValue();
                     maybeAddEmptyNode(parsedObjects);
                     break;
                 case STOP_TOKEN:
@@ -105,19 +110,25 @@ public class NewickFormatImporter {
             position++;
         }
 
-        return parsedObjects
+        return parsedObjects;
+    }
+
+    List<ParsedObject> filterTokens(List<ParsedObject> tokens) {
+        return tokens
                 .stream()
                 .filter(parsedObject -> !parsedObject.equals(SiblingSeparator.class) && !parsedObject.equals(Stop.class))
                 .collect(Collectors.toList());
     }
 
     private void maybeAddEmptyNode(List<ParsedObject> parsedObjects) {
-        if (!parsedObjects.get(parsedObjects.size() - 1).equals(NodeName.class)) {
+        ParsedObject previous = parsedObjects.get(parsedObjects.size() - 1);
+        if (!previous.equals(NodeName.class) && !previous.equals(NodeValue.class)) {
             parsedObjects.add(new NodeName());
         }
     }
 
-    private int readSequence(int position, String sequence) {
+    private Pair<Integer, String> readSequence(int position) {
+        String sequence = "";
         char current;
         while (position < fileContent.length()) {
             current = fileContent.charAt(position);
@@ -133,7 +144,7 @@ public class NewickFormatImporter {
             sequence += current;
             position++;
         }
-        return position;
+        return Pair.of(position, sequence);
     }
 
     public static abstract class ParsedObject {
@@ -169,7 +180,9 @@ public class NewickFormatImporter {
 
         @Override
         public int parse(int position) {
-            return readSequence(position, name) - 1;
+            Pair<Integer, String> readResult = readSequence(position);
+            this.name = readResult.getRight();
+            return readResult.getLeft() - 1;
         }
 
         @Override
@@ -178,18 +191,20 @@ public class NewickFormatImporter {
         }
     }
 
-    public final class DistanceValue extends ParsedObject {
+    public final class NodeValue extends ParsedObject {
 
         String value = "";
 
         @Override
         public int parse(int position) {
-            return readSequence(position + 1, value) - 1;
+            Pair<Integer, String> readResult = readSequence(position + 1);
+            this.value = readResult.getRight();
+            return readResult.getLeft() - 1;
         }
 
         @Override
         public String toString() {
-            return "DistanceValue('" + value + "')";
+            return "NodeValue('" + value + "')";
         }
     }
 }

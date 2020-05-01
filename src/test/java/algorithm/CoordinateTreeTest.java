@@ -1,16 +1,15 @@
 package algorithm;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import tree.AbstractTree.TraverseStrategy;
 import tree.Tree;
 
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class CoordinateTreeTest {
 
@@ -95,30 +94,6 @@ public class CoordinateTreeTest {
         });
         coordinateTree.traverse(TraverseStrategy.BREADTH_FIRST, (t) -> {
             assertEquals(new Point2D.Float(1.0f, 2.0f), t.location());
-            return true;
-        });
-    }
-
-    @Test
-    public void shouldFindLeftNeighbor() {
-        Tree<String> tree = new Tree<>("root");
-        Tree<String> child1 = tree.addChild("child1");
-        Tree<String> child2 = tree.addChild("child2");
-
-        Tree<String> child11 = child1.addChild("child1.1");
-        child1.addChild("child1.2");
-
-        child11.addChild("child1.1.1");
-
-        Tree<String> child21 = child2.addChild("child2.1");
-        child21.addChild("child2.1.1");
-
-        CoordinateTree<String, Tree<String>> coordinateTree = CoordinateTree.from(tree);
-        coordinateTree.traverse(TraverseStrategy.BREADTH_FIRST, (t) -> {
-            Optional<CoordinateTree<String, Tree<String>>> leftNeighbor = coordinateTree.getLeftNeighbor(t);
-            String lnName = "null";
-            if (leftNeighbor.isPresent()) lnName = leftNeighbor.get().data();
-            System.out.println(t.data() + " ln: " + lnName);
             return true;
         });
     }
