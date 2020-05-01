@@ -10,14 +10,14 @@ import java.awt.*;
 import static ui.TreeDrawer.LEVEL_OFFSET;
 import static ui.TreeDrawer.NODE_SIZE;
 
-public class DrawWindow extends Canvas {
+public class TreeDrawWindow extends Canvas {
 
     final JFrame frame;
     private final CoordinateTree<?, ?> tree;
 
-    public DrawWindow(int width, int height, CoordinateTree<?, ?> tree) {
+    public TreeDrawWindow(String title, int width, int height, CoordinateTree<?, ?> tree) {
         this.tree = tree;
-        this.frame = new JFrame("Walker algorithm");
+        this.frame = new JFrame(title);
 
         this.setSize(width, height);
 
@@ -26,7 +26,7 @@ public class DrawWindow extends Canvas {
         this.frame.setVisible(true);
         this.frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        MutableFloat maxXValue = new MutableFloat(0.0f);
+        MutableFloat maxXValue = new MutableFloat(Float.NEGATIVE_INFINITY);
         tree.traverse(TraverseStrategy.BREADTH_FIRST, (t) -> {
             if (t.location().x > maxXValue.floatValue()) {
                 maxXValue.setValue(t.location().x);

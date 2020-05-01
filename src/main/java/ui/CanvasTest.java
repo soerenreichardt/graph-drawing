@@ -31,7 +31,7 @@ public class CanvasTest {
         CoordinateTree<String, Tree<String>> coordinateTree = CoordinateTree.from(tree);
         Walker<String, CoordinateTree<String, Tree<String>>> walkerAlgorithm = new Walker<>(coordinateTree);
         CoordinateTree<String, CoordinateTree<String, Tree<String>>> computeResult = walkerAlgorithm.compute();
-        new DrawWindow(400, 400, computeResult);
+        new TreeDrawWindow("Walker", 400, 400, computeResult);
 
     }
 }

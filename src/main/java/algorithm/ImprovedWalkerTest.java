@@ -12,6 +12,6 @@ public class ImprovedWalkerTest {
 
         var coordinateTree = CoordinateTree.from(tree);
         var walkAlgorithmResult = new ImprovedWalker<>(coordinateTree).compute();
-        new DrawWindow(400, 400, walkAlgorithmResult);
+        new TreeDrawWindow("ImprovedWalker", 400, 400, walkAlgorithmResult);
     }
 }
