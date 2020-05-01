@@ -2,6 +2,10 @@ package algorithm;
 
 import tree.AbstractTree;
 
+import java.util.List;
+
+import static algorithm.Walker.*;
+
 public class ImprovedWalker<D, T extends AbstractTree<D, T>> {
 
     private final CoordinateTree<D, T> tree;
@@ -12,12 +16,17 @@ public class ImprovedWalker<D, T extends AbstractTree<D, T>> {
 
     public CoordinateTree<D, T> compute() {
         firstWalk(tree);
+        secondWalk(tree, 0.0f);
         return tree;
     }
 
     private void firstWalk(CoordinateTree<D, T> currentRoot) {
         if (!currentRoot.hasChildren()) {
-            currentRoot.preliminaryX = 0.0f;
+            if (currentRoot.leftSibling() != null) {
+                currentRoot.preliminaryX = currentRoot.leftSibling().preliminaryX + SIBLING_SPACING + MEAN_NODE_SIZE;
+            } else {
+                currentRoot.preliminaryX = 0.0f;
+            }
         } else {
             var defaultAncestor = currentRoot.getLeftChild();
             for (var child : currentRoot.children()) {
@@ -28,7 +37,7 @@ public class ImprovedWalker<D, T extends AbstractTree<D, T>> {
 
             float midPoint = (currentRoot.getLeftChild().preliminaryX + currentRoot.getRightChild().preliminaryX) * 0.5f;
             if (currentRoot.leftSibling() != null) {
-                currentRoot.preliminaryX = currentRoot.leftSibling().preliminaryX; // + distance
+                currentRoot.preliminaryX = currentRoot.leftSibling().preliminaryX + SIBLING_SPACING + MEAN_NODE_SIZE;
                 currentRoot.modifier = currentRoot.preliminaryX - midPoint;
             } else {
                 currentRoot.preliminaryX = midPoint;
@@ -41,7 +50,7 @@ public class ImprovedWalker<D, T extends AbstractTree<D, T>> {
             var insideRight = currentRoot;
             var outsideRight = currentRoot;
             var insideLeft = currentRoot.leftSibling();
-            var outsideLeft = insideRight.getLeftChild();
+            var outsideLeft = insideRight.leftmostSibling();
 
             float modInsideRight = insideRight.modifier;
             float modOutsideRight = outsideRight.modifier;
@@ -56,7 +65,10 @@ public class ImprovedWalker<D, T extends AbstractTree<D, T>> {
 
                 outsideRight.ancestor = currentRoot;
 
-                float shift = (insideLeft.preliminaryX + modInsideLeft) - (insideRight.preliminaryX + modInsideRight); // + distance
+                float shift = (insideLeft.preliminaryX + modInsideLeft) -
+                        (insideRight.preliminaryX + modInsideRight) +
+                        SUBTREE_SEPARATION +
+                        MEAN_NODE_SIZE;
                 if (shift > 0) {
                     moveSubTree(ancestor(insideLeft, currentRoot, defaultAncestor), currentRoot, shift);
                     modInsideRight += shift;
@@ -69,7 +81,7 @@ public class ImprovedWalker<D, T extends AbstractTree<D, T>> {
             }
 
             if (nextRight(insideLeft) != null && nextRight(outsideRight) == null) {
-                outsideRight.thread = nextLeft(insideLeft);
+                outsideRight.thread = nextRight(insideLeft);
                 outsideRight.modifier += modInsideLeft - modOutsideRight;
             }
             if (nextLeft(insideRight) != null && nextLeft(outsideLeft) == null) {
@@ -79,7 +91,7 @@ public class ImprovedWalker<D, T extends AbstractTree<D, T>> {
             }
         }
 
-        return null;
+        return defaultAncestor;
     }
 
     private void secondWalk(CoordinateTree<D, T> node, float m) {
@@ -95,7 +107,9 @@ public class ImprovedWalker<D, T extends AbstractTree<D, T>> {
         float shift = 0;
         float change = 0;
 
-        for (var child : node.children()) {
+        List<CoordinateTree<D, T>> children = node.children();
+        for (int i = 0; i < children.size(); i++) {
+            CoordinateTree<D, T> child = children.get(children.size() - i - 1);
             child.preliminaryX += shift;
             child.modifier += shift;
             change += child.change;

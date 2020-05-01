@@ -96,6 +96,14 @@ public abstract class AbstractTree<DATA, TREE extends AbstractTree<DATA, TREE>> 
         return this.leftSibling;
     }
 
+    public TREE leftmostSibling() {
+        TREE sibling = (TREE) this;
+        while (sibling.leftSibling != null) {
+            sibling = sibling.leftSibling;
+        }
+        return sibling;
+    }
+
     public Optional<TREE> getLeftNeighbor(TREE node) {
         AtomicBoolean nodeSeen = new AtomicBoolean(false);
         List<TREE> maybeResult = new ArrayList<>(1);
