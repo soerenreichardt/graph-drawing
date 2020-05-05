@@ -1,6 +1,7 @@
 package algorithm;
 
 import org.junit.jupiter.api.Test;
+import tree.AbstractTree;
 import tree.AbstractTree.TraverseStrategy;
 import tree.Tree;
 
