@@ -1,10 +1,11 @@
-package algorithm;
+package algorithm.walker;
 
+import algorithm.CoordinateTree;
 import tree.AbstractTree;
 
 import java.util.List;
 
-import static algorithm.Walker.*;
+import static algorithm.walker.Walker.*;
 
 public class ImprovedWalker<D, T extends AbstractTree<D, T>> {
 

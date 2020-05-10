@@ -1,7 +1,7 @@
 package main;
 
 import algorithm.CoordinateTree;
-import algorithm.Walker;
+import algorithm.walker.Walker;
 import io.NewickFormatImporter;
 import tree.Tree;
 import ui.TreeDrawWindow;

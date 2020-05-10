@@ -1,5 +1,6 @@
-package algorithm;
+package algorithm.walker;
 
+import algorithm.CoordinateTree;
 import tree.AbstractTree;
 import tree.AbstractTree.TraverseStrategy;
 
