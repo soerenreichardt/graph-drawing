@@ -6,8 +6,8 @@ import java.util.stream.Collectors;
 
 public class Graph<DATA> {
 
-    AtomicLong nodeCount;
-    AtomicLong relationshipCount;
+    long highestNodeId;
+    long highestRelationshipId;
 
     Map<Long, Node<DATA>> nodes;
     Map<Long, List<Relationship<DATA>>> relationships;
@@ -15,8 +15,8 @@ public class Graph<DATA> {
     Map<Long, Integer> inDegree;
 
     public Graph() {
-        this.nodeCount = new AtomicLong(0L);
-        this.relationshipCount = new AtomicLong(0L);
+        this.highestNodeId = 0;
+        this.highestRelationshipId = 0;
 
         this.nodes = new HashMap<>();
         this.relationships = new HashMap<>();
@@ -25,11 +25,17 @@ public class Graph<DATA> {
     }
 
     public Node<DATA> addNode(DATA data) {
-        long nodeId = nodeCount.getAndIncrement();
+        long nodeId = ++highestNodeId;
         return addNode(new Node<>(nodeId, data));
     }
 
     public Node<DATA> addNode(Node<DATA> node) {
+        if (nodes.containsKey(node.id())) {
+            throw new IllegalArgumentException(String.format("Node with id %s already exists", node.id()));
+        }
+        if (node.id() > highestNodeId) {
+            this.highestNodeId = node.id();
+        }
         this.nodes.put(node.id(), node);
         return node;
     }
@@ -75,6 +81,10 @@ public class Graph<DATA> {
         this.relationships.get(node.id()).forEach(relationship -> visitor.accept(relationship.source(), relationship.target()));
     }
 
+    public List<Node<DATA>> neighborsForNode(Node<DATA> node) {
+        return this.relationships.get(node.id()).stream().map(Relationship::target).collect(Collectors.toList());
+    }
+
     public int degree(Node<DATA> node) {
         if (!relationships.containsKey(node.id())) {
             return 0;
@@ -95,5 +105,9 @@ public class Graph<DATA> {
 
     public List<Relationship<DATA>> relationships() {
         return this.relationships.values().stream().flatMap(List::stream).collect(Collectors.toList());
+    }
+
+    public int nodeCount() {
+        return this.nodes.size();
     }
 }
