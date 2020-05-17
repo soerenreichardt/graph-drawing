@@ -16,6 +16,8 @@ public class Siguyama {
     public Graph<String> compute() {
         Graph<String> acyclicGraph = removeCycles();
         Map<Node<String>, Float> layeredNodes = layerAssignment();
+        Map<Node<String>, Float> horizontalPositionedNodes = crossingReduction(layeredNodes);
+
         return null;
     }
 
@@ -25,5 +27,9 @@ public class Siguyama {
 
     private Map<Node<String>, Float> layerAssignment() {
         return new LongestPath(graph).compute();
+    }
+
+    private Map<Node<String>, Float> crossingReduction(Map<Node<String>, Float> layerAssignment) {
+        return new CrossingReduction(graph, layerAssignment).compute();
     }
 }

@@ -6,7 +6,9 @@ import graph.Node;
 import graph.Relationship;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class GreedyEdgeRemoval implements Algorithm<Graph<String>> {
@@ -64,8 +66,10 @@ public class GreedyEdgeRemoval implements Algorithm<Graph<String>> {
             nodes = new ArrayList<>(modifiedNodes);
         }
 
-        leftList.addAll(rightList);
-        return buildGraphFromLists(leftList, acyclicRelationships);
+        Set<Node<String>> combinedNodeLists = new HashSet<>();
+        combinedNodeLists.addAll(leftList);
+        combinedNodeLists.addAll(rightList);
+        return buildGraphFromLists(combinedNodeLists, acyclicRelationships);
     }
 
     private List<Relationship<String>> getOutgoingRelationships(List<Relationship<String>> relationships, Node<String> node) {
@@ -84,7 +88,7 @@ public class GreedyEdgeRemoval implements Algorithm<Graph<String>> {
         return (int) relationships.stream().filter(relationship -> relationship.target() == node).count();
     }
 
-    private Graph<String> buildGraphFromLists(List<Node<String>> nodes, List<Relationship<String>> relationships) {
+    private Graph<String> buildGraphFromLists(Set<Node<String>> nodes, List<Relationship<String>> relationships) {
         Graph<String> acyclicGraph = new Graph<>();
         nodes.forEach(acyclicGraph::addNode);
         relationships.forEach(acyclicGraph::addRelationship);

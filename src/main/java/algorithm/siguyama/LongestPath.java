@@ -4,7 +4,6 @@ import algorithm.Algorithm;
 import graph.Graph;
 import graph.Node;
 
-import java.awt.geom.Point2D;
 import java.util.*;
 
 public class LongestPath implements Algorithm<Map<Node<String>, Float>> {
@@ -28,8 +27,8 @@ public class LongestPath implements Algorithm<Map<Node<String>, Float>> {
             }
         });
         while (!nodesToVisit.isEmpty()) {
-            for (Node<String> node : nodesToVisit) {
-                List<Node<String>> neighbors = graph.neighborsForNode(node);
+            for (Node<String> node : Set.copyOf(nodesToVisit)) {
+                List<Node<String>> neighbors = graph.outgoingNeighborsForNode(node);
                 if (neighbors.stream().allMatch(layeredNodes::containsKey)) {
                     double minValue = neighbors.stream().mapToDouble(layeredNodes::get).min().getAsDouble();
                     layeredNodes.put(node, (float) minValue - 1.0f);

@@ -81,7 +81,7 @@ public class Graph<DATA> {
         this.relationships.get(node.id()).forEach(relationship -> visitor.accept(relationship.source(), relationship.target()));
     }
 
-    public List<Node<DATA>> neighborsForNode(Node<DATA> node) {
+    public List<Node<DATA>> outgoingNeighborsForNode(Node<DATA> node) {
         return this.relationships.get(node.id()).stream().map(Relationship::target).collect(Collectors.toList());
     }
 
