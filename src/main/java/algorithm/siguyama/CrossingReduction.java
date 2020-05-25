@@ -4,9 +4,11 @@ import algorithm.Algorithm;
 import graph.Graph;
 import graph.Node;
 import graph.Relationship;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 public class CrossingReduction implements Algorithm<Map<Node<String>, Float>> {
 
@@ -40,16 +42,26 @@ public class CrossingReduction implements Algorithm<Map<Node<String>, Float>> {
 
     @Override
     public Map<Node<String>, Float> compute() {
+        Map<Node<String>, Float> result = new HashMap<>();
+
         computeDummies();
         LinkedList<Block> blocks = createBlocks();
 
         for (int i = 0; i < ITERATIONS; i++) {
-            for (Block block : blocks) {
+            for (int j = 0; j < blocks.size(); j++) {
+                Block block = blocks.get(j);
                 siftingStep(blocks, block);
             }
         }
 
-        return null;
+        List<Node<String>> allNodes = graph.nodes();
+        allNodes.addAll(dummies.keySet());
+
+        allNodes.forEach(node -> {
+            result.put(node, (float) nodeBlockMapping.get(node).position);
+        });
+
+        return result;
     }
 
     private void siftingStep(LinkedList<Block> blocks, Block block) {
@@ -57,16 +69,31 @@ public class CrossingReduction implements Algorithm<Map<Node<String>, Float>> {
         blocks.addFirst(block);
 
         sortAdjacencies(blocks);
+
+        int currentCrossings = 0;
+        int bestCrossings = 0;
+        int bestBlockPosition = 0;
+
+        for (int i = 1; i < blocks.size() - 1; i++) {
+            currentCrossings += siftingSwap(block, blocks.get(i), blocks);
+            if (currentCrossings < bestCrossings) {
+                bestCrossings = currentCrossings;
+                bestBlockPosition = i;
+            }
+        }
+
+        blocks.remove(block);
+        blocks.add(bestBlockPosition, block);
     }
 
     private void sortAdjacencies(List<Block> blocks) {
         for (int i = 0; i < blocks.size(); i++) {
             Block block = blocks.get(i);
             block.position = i;
-            outgoingAdjacency.get(block).clear();
-            incomingAdjacency.get(block).clear();
-            outgoingIndex.get(block).clear();
-            incomingIndex.get(block).clear();
+            outgoingAdjacency.getOrDefault(block, new ArrayList<>()).clear();
+            incomingAdjacency.getOrDefault(block, new ArrayList<>()).clear();
+            outgoingIndex.getOrDefault(block, new ArrayList<>()).clear();
+            incomingIndex.getOrDefault(block, new ArrayList<>()).clear();
         }
 
         for (Block block : blocks) {
@@ -75,7 +102,6 @@ public class CrossingReduction implements Algorithm<Map<Node<String>, Float>> {
             graph.forEachRelationship((source, target) -> {
                 if (target == upper) {
                     Block sourceBlock = nodeBlockMapping.get(source);
-                    this.outgoingAdjacency.putIfAbsent(sourceBlock, new ArrayList<>());
                     List<Node<String>> adjacencyList = this.outgoingAdjacency.get(sourceBlock);
                     int sourcePosition = adjacencyList.size();
                     adjacencyList.add(upper);
@@ -91,7 +117,6 @@ public class CrossingReduction implements Algorithm<Map<Node<String>, Float>> {
             graph.forEachRelationship((source, target) -> {
                 if (source == lower) {
                     Block targetBlock = nodeBlockMapping.get(target);
-                    this.incomingIndex.putIfAbsent(targetBlock, new ArrayList<>());
                     List<Node<String>> adjacencyList = this.incomingAdjacency.get(targetBlock);
                     int targetPosition = adjacencyList.size();
                     adjacencyList.add(lower);
@@ -104,6 +129,75 @@ public class CrossingReduction implements Algorithm<Map<Node<String>, Float>> {
                 }
             });
         }
+    }
+
+    enum Direction {
+        OUTGOING,
+        INCOMING
+    }
+
+    private int siftingSwap(Block blockA, Block blockB, LinkedList<Block> blocksRef) {
+        int delta = 0;
+        Set<Pair<Float, Direction>> levelAndDirections = new HashSet<>();
+        Set<Float> levelsA = blockA.nodes.stream().map(layerAssignment::get).collect(Collectors.toSet());
+        Set<Float> levelsB = blockB.nodes.stream().map(layerAssignment::get).collect(Collectors.toSet());
+        if (levelsB.contains(layerAssignment.get(blockA.upper))) {
+            levelAndDirections.add(Pair.of(layerAssignment.get(blockA.upper), Direction.INCOMING));
+        }
+        if (levelsB.contains(layerAssignment.get(blockA.lower))) {
+            levelAndDirections.add(Pair.of(layerAssignment.get(blockA.lower), Direction.OUTGOING));
+        }
+        if (levelsA.contains(layerAssignment.get(blockB.upper))) {
+            levelAndDirections.add(Pair.of(layerAssignment.get(blockB.upper), Direction.INCOMING));
+        }
+        if (levelsA.contains(layerAssignment.get(blockB.lower))) {
+            levelAndDirections.add(Pair.of(layerAssignment.get(blockB.lower), Direction.OUTGOING));
+        }
+
+        for (Pair<Float, Direction> levelAndDirection : levelAndDirections) {
+            Float level = levelAndDirection.getLeft();
+            Direction direction = levelAndDirection.getRight();
+            Node<String> nodeA = blockA.nodes.stream().filter(node -> layerAssignment.get(node).equals(level)).findFirst().orElseThrow();
+            Node<String> nodeB = blockB.nodes.stream().filter(node -> layerAssignment.get(node).equals(level)).findFirst().orElseThrow();
+            delta += uswap(nodeA, nodeB, direction);
+        }
+
+        int blockAIndex = blocksRef.indexOf(blockA);
+        int blockBIndex = blocksRef.indexOf(blockB);
+
+        blocksRef.set(blockAIndex, blockB);
+        blocksRef.set(blockBIndex, blockA);
+
+        blockA.position++;
+        blockB.position--;
+
+        return delta;
+    }
+
+    private int uswap(Node<String> nodeA, Node<String> nodeB, Direction direction) {
+        int c = 0;
+        int i = 0;
+        int j = 0;
+
+        List<Node<String>> neighborsA = orderedSegmentNeighbors(nodeA, direction);
+        List<Node<String>> neighborsB = orderedSegmentNeighbors(nodeB, direction);
+
+        while (i < neighborsA.size() && j < neighborsB.size()) {
+            int blockAPosition = nodeBlockMapping.get(neighborsA.get(i)).position;
+            int blockBPosition = nodeBlockMapping.get(neighborsB.get(j)).position;
+            if (blockAPosition < blockBPosition) {
+                c += (neighborsB.size() - j);
+                i++;
+            } else if(blockAPosition > blockBPosition) {
+                c -= (neighborsA.size() - i);
+                j++;
+            } else {
+                c += (neighborsB.size() - j) - (neighborsA.size() - i);
+                i++;
+                j++;
+            }
+        }
+        return c;
     }
 
     private void computeDummies() {
@@ -135,7 +229,7 @@ public class CrossingReduction implements Algorithm<Map<Node<String>, Float>> {
             blocks.add(new Block(node, blockPosition.getAndIncrement()));
             if (dummies.containsKey(node)) {
                 List<Relationship<String>> dummyRelationships = dummies.get(node);
-                Block block = new Block(node, dummyRelationships.get(dummyRelationships.size()).target(), blockPosition.getAndIncrement());
+                Block block = new Block(node, dummyRelationships.get(dummyRelationships.size() - 1).target(), blockPosition.getAndIncrement());
                 for (int i = 0; i < dummyRelationships.size() - 1; i++) {
                     block.addNode(dummyRelationships.get(i).target());
                 }
@@ -149,6 +243,26 @@ public class CrossingReduction implements Algorithm<Map<Node<String>, Float>> {
     private int span(Node<String> source, Node<String> target) {
         // TODO might be Math.abs(...)
         return (int) (layerAssignment.get(target) - layerAssignment.get(source));
+    }
+
+    private List<Node<String>> orderedSegmentNeighbors(Node<String> node, Direction direction) {
+        return List.copyOf(segmentNeighbors(node, direction))
+                .stream()
+                .map(n -> Pair.of(n, nodeBlockMapping.get(n).position))
+                .sorted(Comparator.comparing(Pair::getRight))
+                .map(Pair::getLeft)
+                .collect(Collectors.toList());
+    }
+
+    private Set<Node<String>> segmentNeighbors(Node<String> node, Direction direction) {
+        switch (direction) {
+            case INCOMING:
+                return incomingSegmentNeighbors(node);
+            case OUTGOING:
+                return outgoingSegmentNeighbors(node);
+            default:
+                throw new IllegalArgumentException("Unknown direction: " + direction);
+        }
     }
 
     private Set<Node<String>> incomingSegmentNeighbors(Node<String> node) {
@@ -212,6 +326,10 @@ public class CrossingReduction implements Algorithm<Map<Node<String>, Float>> {
 
         public void addNode(Node<String> node) {
             this.nodes.add(node);
+        }
+
+        public int position() {
+            return this.position;
         }
 
     }
