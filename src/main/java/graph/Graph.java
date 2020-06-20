@@ -78,11 +78,20 @@ public class Graph<DATA> {
     }
 
     public void forEachRelationship(Node<DATA> node, RelationshipVisitor<DATA> visitor) {
+        if (!relationships.containsKey(node.id())) return;
         this.relationships.get(node.id()).forEach(relationship -> visitor.accept(relationship.source(), relationship.target()));
     }
 
     public List<Node<DATA>> outgoingNeighborsForNode(Node<DATA> node) {
-        return this.relationships.get(node.id()).stream().map(Relationship::target).collect(Collectors.toList());
+        if (!relationships.containsKey(node.id())) {
+            return List.of();
+        } else {
+            return this.relationships.get(node.id()).stream().map(Relationship::target).collect(Collectors.toList());
+        }
+    }
+
+    public boolean containsNode(Node<DATA> node) {
+        return this.nodes().contains(node);
     }
 
     public int degree(Node<DATA> node) {

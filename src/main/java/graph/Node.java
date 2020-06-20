@@ -17,4 +17,9 @@ public class Node<DATA> {
     public DATA data() {
         return data;
     }
+
+    @Override
+    public String toString() {
+        return data().toString();
+    }
 }
