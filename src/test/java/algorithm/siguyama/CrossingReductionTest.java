@@ -78,7 +78,7 @@ class CrossingReductionTest {
     @Test
     void computeCorrectAdjacencies() {
         CrossingReduction crossingReduction = new CrossingReduction(graph, layerAssignment);
-        crossingReduction.compute();
+        Map<Node<String>, Float> result = crossingReduction.compute();
 
         var a = 1;
     }

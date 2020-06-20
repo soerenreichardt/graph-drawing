@@ -18,8 +18,8 @@ public class Siguyama implements Algorithm<Map<Node<String>, Point2D.Float>> {
 
     public Map<Node<String>, Point2D.Float> compute() {
         Graph<String> acyclicGraph = removeCycles();
-        Map<Node<String>, Float> layeredNodes = layerAssignment();
-        Map<Node<String>, Float> horizontalPositionedNodes = crossingReduction(layeredNodes);
+        Map<Node<String>, Float> layeredNodes = layerAssignment(acyclicGraph);
+        Map<Node<String>, Float> horizontalPositionedNodes = crossingReduction(acyclicGraph, layeredNodes);
 
         Map<Node<String>, Point2D.Float> nodePositions = new HashMap<>();
         layeredNodes.forEach((node, yPosition) -> {
@@ -33,11 +33,11 @@ public class Siguyama implements Algorithm<Map<Node<String>, Point2D.Float>> {
         return new GreedyEdgeRemoval(graph).compute();
     }
 
-    private Map<Node<String>, Float> layerAssignment() {
-        return new LongestPath(graph).compute();
+    private Map<Node<String>, Float> layerAssignment(Graph<String> acyclicGraph) {
+        return new LongestPath(acyclicGraph).compute();
     }
 
-    private Map<Node<String>, Float> crossingReduction(Map<Node<String>, Float> layerAssignment) {
-        return new CrossingReduction(graph, layerAssignment).compute();
+    private Map<Node<String>, Float> crossingReduction(Graph<String> acyclicGraph, Map<Node<String>, Float> layerAssignment) {
+        return new CrossingReduction(acyclicGraph, layerAssignment).compute();
     }
 }

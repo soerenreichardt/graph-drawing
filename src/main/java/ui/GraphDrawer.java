@@ -15,6 +15,7 @@ public class GraphDrawer {
     public static final int LEVEL_OFFSET = 15;
 
     public static void drawGraph(Graph<String> graph, Map<Node<String>, Point2D.Float> nodePositions, Graphics2D g) {
+        g.setColor(Color.DARK_GRAY);
         graph.forEachNode(node -> {
             int xPosition = (int) nodePositions.get(node).x * NODE_SIZE;
             int yPosition = (int) nodePositions.get(node).y * (NODE_SIZE + LEVEL_OFFSET);
@@ -29,6 +30,10 @@ public class GraphDrawer {
                 g.drawLine(xPosition + lineOffset - 1, yPosition + lineOffset - 1, parentXPosition, parentYPosition);
                 g.drawLine(xPosition + lineOffset + 1, yPosition + lineOffset + 1, parentXPosition, parentYPosition);
             });
+
+            g.setColor(Color.WHITE);
+            g.drawString(node.data(), xPosition + (NODE_SIZE / 2), yPosition + (NODE_SIZE / 2));
+            g.setColor(Color.DARK_GRAY);
         });
     }
 }

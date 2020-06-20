@@ -47,12 +47,9 @@ public class CrossingReduction implements Algorithm<Map<Node<String>, Float>> {
             }
         }
 
-//        List<Node<String>> allNodes = graph.nodes();
-//        allNodes.addAll(dummies.keySet());
-//
-//        allNodes.forEach(node -> {
-//            result.put(node, (float) nodeBlockMapping.get(node).position);
-//        });
+        graph.forEachNode(node -> {
+            result.put(node, (float) nodeBlockMapping.get(node).position);
+        });
 
         return result;
     }
@@ -99,15 +96,21 @@ public class CrossingReduction implements Algorithm<Map<Node<String>, Float>> {
                 Node<String> target = rel.target();
                 if (target == upper) {
                     Block sourceBlock = nodeBlockMapping.get(rel.source());
-                    if (sourceBlock.outgoingAdjacency.contains(target)) return;
-                    int currentPosition = sourceBlock.outgoingAdjacency.add(target);
+
+                    int currentPosition;
+                    if (sourceBlock.outgoingAdjacency.contains(target)) {
+                        currentPosition = sourceBlock.outgoingAdjacency.find(target);
+                    } else {
+                        currentPosition = sourceBlock.outgoingAdjacency.add(target);
+                    }
 
                     if (block.position < sourceBlock.position) {
                         positionCache.put(rel, currentPosition);
                     } else {
-                        Integer element = positionCache.get(rel);
-                        sourceBlock.outgoingIndex.add(currentPosition, element);
-                        block.incomingIndex.add(element, currentPosition);
+                        Integer position = positionCache.get(rel);
+                        if (position == null) return;
+                        sourceBlock.outgoingIndex.add(currentPosition, position);
+                        block.incomingIndex.add(position, currentPosition);
                     }
                 }
             });
@@ -116,14 +119,21 @@ public class CrossingReduction implements Algorithm<Map<Node<String>, Float>> {
                 Node<String> source = rel.source();
                 if (source == lower) {
                     Block targetBlock = nodeBlockMapping.get(rel.target());
-                    if (targetBlock.incomingAdjacency.contains(source)) return;
-                    int currentPosition = targetBlock.incomingAdjacency.add(source);
+
+                    int currentPosition;
+                    if (targetBlock.incomingAdjacency.contains(source)) {
+                        currentPosition = targetBlock.incomingAdjacency.find(source);
+                    } else {
+                        currentPosition = targetBlock.incomingAdjacency.add(source);
+                    }
 
                     if (block.position < targetBlock.position) {
                         positionCache.put(rel, currentPosition);
                     } else {
-                        targetBlock.incomingIndex.add(currentPosition, positionCache.get(rel));
-                        block.outgoingIndex.add(positionCache.get(rel), currentPosition);
+                        Integer position = positionCache.get(rel);
+                        if (position == null) return;
+                        targetBlock.incomingIndex.add(currentPosition, position);
+                        block.outgoingIndex.add(position, currentPosition);
                     }
                 }
             });
@@ -318,6 +328,8 @@ public class CrossingReduction implements Algorithm<Map<Node<String>, Float>> {
         return outgoingNeighbors;
     }
 
+    public static final Node<String> EMPTY_NODE = new Node<>(-1, null);
+
     public final class Block {
 
         int position;
@@ -376,10 +388,10 @@ public class CrossingReduction implements Algorithm<Map<Node<String>, Float>> {
 
             // sad java 😞
             Class<Node<String>> nodeClass = (Class<Node<String>>) new Node<String>(IGNORE, "").getClass();
-            outgoingAdjacency = new CursorBasedArray<>(nodeClass, outDegree);
-            incomingAdjacency = new CursorBasedArray<>(nodeClass, inDegree);
-            outgoingIndex = new CursorBasedArray<>(Integer.class, outDegree);
-            incomingIndex = new CursorBasedArray<>(Integer.class, inDegree);
+            outgoingAdjacency = new CursorBasedArray<>(nodeClass, EMPTY_NODE, outDegree);
+            incomingAdjacency = new CursorBasedArray<>(nodeClass, EMPTY_NODE,inDegree);
+            outgoingIndex = new CursorBasedArray<>(Integer.class, -1, outDegree);
+            incomingIndex = new CursorBasedArray<>(Integer.class, -1, inDegree);
         }
 
         private void setAdjacencies() {

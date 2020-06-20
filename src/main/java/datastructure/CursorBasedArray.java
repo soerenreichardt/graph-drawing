@@ -3,14 +3,18 @@ package datastructure;
 import java.lang.reflect.Array;
 import java.util.Arrays;
 
-public class CursorBasedArray<T> {
+public class CursorBasedArray<T extends Comparable<T>> {
 
     T[] array;
     int size;
     int cursor;
 
-    public CursorBasedArray(Class<T> clazz, int size) {
+    private T emptyValue;
+
+    public CursorBasedArray(Class<T> clazz, T emptyValue, int size) {
+        this.emptyValue = emptyValue;
         this.array = (T[])Array.newInstance(clazz, size);
+        Arrays.fill(array, emptyValue);
         this.size = size;
         this.cursor = 0;
     }
@@ -49,14 +53,24 @@ public class CursorBasedArray<T> {
         return Arrays.asList(array).contains(element);
     }
 
+    public int find(T element) {
+        for (int i = 0; i < array.length; i++) {
+            T value = array[i];
+            if (value.equals(element)) {
+                return i;
+            }
+        }
+        throw new IllegalStateException(String.format("Element %s was not found.", element));
+    }
+
     public void clear() {
-        Arrays.fill(array, null);
+        Arrays.fill(array, emptyValue);
         cursor = 0;
     }
 
     private void nextFreeCursorPosition() {
         cursor++;
-        while (cursor < size && array[cursor] != null) {
+        while (cursor < size && !array[cursor].equals(emptyValue)) {
             cursor++;
         }
     }

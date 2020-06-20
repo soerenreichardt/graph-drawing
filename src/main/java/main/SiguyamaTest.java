@@ -24,6 +24,7 @@ public class SiguyamaTest {
         graph.addRelationship(node2, node4);
         graph.addRelationship(node2, node7);
         graph.addRelationship(node3, node4);
+        graph.addRelationship(node4, node5);
         graph.addRelationship(node5, node6);
         graph.addRelationship(node5, node7);
         graph.addRelationship(node6, node7);
