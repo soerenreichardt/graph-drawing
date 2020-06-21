@@ -1,9 +1,7 @@
 package ui;
 
-import algorithm.CoordinateTree;
 import graph.Graph;
 import graph.Node;
-import tree.AbstractTree.TraverseStrategy;
 
 import java.awt.*;
 import java.awt.geom.Point2D;

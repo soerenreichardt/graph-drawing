@@ -51,7 +51,7 @@ class CrossingReductionTest {
     }
 
     @Test
-    void computedCorrectDummies() {
+    void computeCorrectDummies() {
         CrossingReduction crossingReduction = new CrossingReduction(graph, layerAssignment);
         crossingReduction.compute();
         var expectedDummyNames = Set.of(

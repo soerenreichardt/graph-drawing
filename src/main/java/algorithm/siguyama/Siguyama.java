@@ -3,9 +3,11 @@ package algorithm.siguyama;
 import algorithm.Algorithm;
 import graph.Graph;
 import graph.Node;
+import graph.Relationship;
 
 import java.awt.geom.Point2D;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class Siguyama implements Algorithm<Map<Node<String>, Point2D.Float>> {
@@ -39,5 +41,9 @@ public class Siguyama implements Algorithm<Map<Node<String>, Point2D.Float>> {
 
     private Map<Node<String>, Float> crossingReduction(Graph<String> acyclicGraph, Map<Node<String>, Float> layerAssignment) {
         return new CrossingReduction(acyclicGraph, layerAssignment).compute();
+    }
+
+    private Map<Node<String>, Float> positionAssignment(Graph<String> properGraph, Map<Node<String>> , List<Relationship<String>>, List<CrossingReduction.Block> blocks) {
+
     }
 }

@@ -18,11 +18,13 @@ public class CrossingReduction implements Algorithm<Map<Node<String>, Float>> {
     public static final int ITERATIONS = 10;
     private Graph<String> graph;
     private Graph<String> properGraph;
-    private Map<Node<String>, Float> layerAssignment;
+    private final Map<Node<String>, Float> layerAssignment;
 
     private Map<Node<String>, List<Relationship<String>>> dummies;
 
     Map<Node<String>, Block> nodeBlockMapping;
+
+    List<Block> finalBlocks;
 
     public CrossingReduction(Graph<String> graph, Map<Node<String>, Float> layerAssignment) {
         this.graph = graph;
@@ -51,11 +53,24 @@ public class CrossingReduction implements Algorithm<Map<Node<String>, Float>> {
             result.put(node, (float) nodeBlockMapping.get(node).position);
         });
 
+        this.finalBlocks = blocks;
         return result;
     }
 
     public Map<Node<String>, List<Relationship<String>>> dummies() {
         return this.dummies;
+    }
+
+    public Graph<String> properGraph() {
+        return this.properGraph;
+    }
+
+    public List<Block> blocks() {
+        return this.finalBlocks;
+    }
+
+    public Map<Node<String>, Float> layerAssigment() {
+        return this.layerAssignment;
     }
 
     private void siftingStep(LinkedList<Block> blocks, Block block) {
