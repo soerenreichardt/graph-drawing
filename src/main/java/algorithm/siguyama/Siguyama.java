@@ -6,9 +6,9 @@ import graph.Node;
 import graph.Relationship;
 
 import java.awt.geom.Point2D;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class Siguyama implements Algorithm<Map<Node<String>, Point2D.Float>> {
 
@@ -21,14 +21,19 @@ public class Siguyama implements Algorithm<Map<Node<String>, Point2D.Float>> {
     public Map<Node<String>, Point2D.Float> compute() {
         Graph<String> acyclicGraph = removeCycles();
         Map<Node<String>, Float> layeredNodes = layerAssignment(acyclicGraph);
-        Map<Node<String>, Float> horizontalPositionedNodes = crossingReduction(acyclicGraph, layeredNodes);
+        CrossingReduction crossingReduction = crossingReduction(acyclicGraph, layeredNodes);
+        Map<Node<String>, Float> verticalPositionedNodes = positionAssignment(
+                crossingReduction.properGraph(),
+                crossingReduction.nodeBlockMapping(),
+                crossingReduction.dummies(),
+                crossingReduction.layerAssignment());
 
-        Map<Node<String>, Point2D.Float> nodePositions = new HashMap<>();
-        layeredNodes.forEach((node, yPosition) -> {
-            var xPosition = horizontalPositionedNodes.get(node);
-            nodePositions.put(node, new Point2D.Float(xPosition, yPosition));
-        });
-        return nodePositions;
+        return verticalPositionedNodes
+                .entrySet()
+                .stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        entry -> new Point2D.Float(entry.getValue(), crossingReduction.layerAssignment().get(entry.getKey()))));
     }
 
     private Graph<String> removeCycles() {
@@ -39,11 +44,16 @@ public class Siguyama implements Algorithm<Map<Node<String>, Point2D.Float>> {
         return new LongestPath(acyclicGraph).compute();
     }
 
-    private Map<Node<String>, Float> crossingReduction(Graph<String> acyclicGraph, Map<Node<String>, Float> layerAssignment) {
+    private CrossingReduction crossingReduction(Graph<String> acyclicGraph, Map<Node<String>, Float> layerAssignment) {
         return new CrossingReduction(acyclicGraph, layerAssignment).compute();
     }
 
-    private Map<Node<String>, Float> positionAssignment(Graph<String> properGraph, Map<Node<String>> , List<Relationship<String>>, List<CrossingReduction.Block> blocks) {
-
+    private Map<Node<String>, Float> positionAssignment(
+            Graph<String> properGraph,
+            Map<Node<String>, CrossingReduction.Block> nodeBlockMapping,
+            Map<Node<String>, List<Relationship<String>>> innerSegments,
+            Map<Node<String>, Float> layerAssignment
+    ) {
+        return new BrandesAndKoepf(properGraph, nodeBlockMapping, innerSegments, layerAssignment).compute();
     }
 }

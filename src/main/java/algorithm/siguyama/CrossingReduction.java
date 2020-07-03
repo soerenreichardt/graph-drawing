@@ -12,12 +12,13 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-public class CrossingReduction implements Algorithm<Map<Node<String>, Float>> {
+public class CrossingReduction implements Algorithm<CrossingReduction> {
 
     public static final int IGNORE = -1;
     public static final int ITERATIONS = 10;
     private Graph<String> graph;
     private Graph<String> properGraph;
+
     private final Map<Node<String>, Float> layerAssignment;
 
     private Map<Node<String>, List<Relationship<String>>> dummies;
@@ -35,7 +36,7 @@ public class CrossingReduction implements Algorithm<Map<Node<String>, Float>> {
     }
 
     @Override
-    public Map<Node<String>, Float> compute() {
+    public CrossingReduction compute() {
         Map<Node<String>, Float> result = new HashMap<>();
 
         Pair<List<Node<String>>, List<Relationship<String>>> dummyEntities = computeDummies();
@@ -54,7 +55,7 @@ public class CrossingReduction implements Algorithm<Map<Node<String>, Float>> {
         });
 
         this.finalBlocks = blocks;
-        return result;
+        return this;
     }
 
     public Map<Node<String>, List<Relationship<String>>> dummies() {
@@ -65,12 +66,12 @@ public class CrossingReduction implements Algorithm<Map<Node<String>, Float>> {
         return this.properGraph;
     }
 
-    public List<Block> blocks() {
-        return this.finalBlocks;
+    public Map<Node<String>, Block> nodeBlockMapping() {
+        return nodeBlockMapping;
     }
 
-    public Map<Node<String>, Float> layerAssigment() {
-        return this.layerAssignment;
+    public Map<Node<String>, Float> layerAssignment() {
+        return layerAssignment;
     }
 
     private void siftingStep(LinkedList<Block> blocks, Block block) {

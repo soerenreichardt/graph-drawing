@@ -7,33 +7,24 @@ import graph.Relationship;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class BrandesAndKoepf implements Algorithm<Map<Node<String>, Float>> {
 
-    private Graph<String> graph;
-    private Graph<String> properGraph;
-    private final List<CrossingReduction.Block> blocks;
-    private Map<Node<String>, CrossingReduction.Block> nodeBlockMapping;
+    private final Graph<String> properGraph;
     private final Map<Node<String>, List<Relationship<String>>> innerSegments;
-    private Map<Node<String>, Float> layerAssignment;
+    private final Map<Node<String>, Float> layerAssignment;
 
-    private Map<Integer, List<Node<String>>> orderedNodes;
+    private final Map<Integer, List<Node<String>>> orderedNodes;
 
     public BrandesAndKoepf(
-            Graph<String> graph,
             Graph<String> properGraph,
-            List<CrossingReduction.Block> blocks,
             Map<Node<String>, CrossingReduction.Block> nodeBlockMapping,
             Map<Node<String>, List<Relationship<String>>> innerSegments,
             Map<Node<String>, Float> layerAssignment
     ) {
-        this.graph = graph;
         this.properGraph = properGraph;
-        this.blocks = blocks;
-        this.nodeBlockMapping = nodeBlockMapping;
         this.innerSegments = innerSegments;
         this.layerAssignment = layerAssignment;
 
@@ -48,7 +39,15 @@ public class BrandesAndKoepf implements Algorithm<Map<Node<String>, Float>> {
 
     @Override
     public Map<Node<String>, Float> compute() {
-        return null;
+        var markedSegments = markType1Conflicts();
+        var rootAndAlign = verticalAlignment(markedSegments);
+        var root = rootAndAlign.getLeft();
+        var align = rootAndAlign.getRight();
+        var xCoordinates = horizontalCompaction(root, align);
+        return xCoordinates
+                .entrySet()
+                .stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().floatValue()));
     }
 
     private Set<Relationship<String>> markType1Conflicts() {
@@ -82,6 +81,104 @@ public class BrandesAndKoepf implements Algorithm<Map<Node<String>, Float>> {
         return markedSegments;
     }
 
+    private Pair<Map<Node<String>, Node<String>>, Map<Node<String>, Node<String>>> verticalAlignment(Set<Relationship<String>> markedSegments) {
+        Map<Node<String>, Node<String>> root = new IdentityHashMap<>();
+        Map<Node<String>, Node<String>> align = new IdentityHashMap<>();
+
+        for (var node : properGraph.nodes()) {
+            root.put(node, node);
+            align.put(node, node);
+        }
+
+        List<Integer> layers = List.copyOf(orderedNodes.keySet());
+        for (int i = 0; i < layers.size(); i++) {
+            int r = 0;
+            List<Node<String>> currentLayer = orderedNodes.get(layers.get(i));
+            for (Node<String> currentNode : currentLayer) {
+                List<Node<String>> upperNeighbors = i > 1
+                        ? getUpperNeighbors(currentNode, orderedNodes.get(layers.get(i - 1)))
+                        : List.of();
+                if (!upperNeighbors.isEmpty()) {
+                    int d = upperNeighbors.size();
+                    for (int m = (int) Math.floor(((double) d + 1.0D) / 2.0D); m < Math.ceil(((double) d + 1.0D) / 2.0D); m++) {
+                        if (align.get(currentNode).equals(currentNode)) {
+                            Node<String> medianUpperNeighbor = upperNeighbors.get(m);
+                            boolean isMarkedSegment = markedSegments.contains(findSegment(medianUpperNeighbor, currentNode));
+                            if (!isMarkedSegment && r < m) {
+                                align.put(medianUpperNeighbor, currentNode);
+                                root.put(currentNode, root.get(medianUpperNeighbor));
+                                align.put(currentNode, root.get(currentNode));
+                                r = m;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return Pair.of(root, align);
+    }
+
+    private Map<Node<String>, Integer> horizontalCompaction(Map<Node<String>, Node<String>> root, Map<Node<String>, Node<String>> align) {
+        Map<Node<String>, Node<String>> sink = new IdentityHashMap<>();
+        Map<Node<String>, Integer> shift = new IdentityHashMap<>();
+        Map<Node<String>, Integer> x = new IdentityHashMap<>();
+
+        for (var node : properGraph.nodes()) {
+            sink.put(node, node);
+            shift.put(node, Integer.MAX_VALUE);
+            x.put(node, null);
+        }
+
+        for (var node : properGraph.nodes()) {
+            if (root.get(node).equals(node)) {
+                placeBlock(node, sink, shift, x, root, align);
+            }
+        }
+
+        for (var node : properGraph.nodes()) {
+            x.put(node, x.get(root.get(node)));
+            if (shift.get(sink.get(root.get(node))) < Integer.MAX_VALUE) {
+                x.put(node, x.get(node) + shift.get(sink.get(root.get(node))));
+            }
+        }
+
+        return x;
+    }
+
+    private void placeBlock(
+            Node<String> node,
+            Map<Node<String>, Node<String>> sink,
+            Map<Node<String>, Integer> shift,
+            Map<Node<String>, Integer> x,
+            Map<Node<String>, Node<String>> root,
+            Map<Node<String>, Node<String>> align
+    ) {
+        if (x.get(node) == null) {
+            x.put(node, 0);
+            var w = node;
+            do {
+                List<Node<String>> currentLayer = orderedNodes.get(layerAssignment.get(w).intValue());
+                int positionInLayer = search(w, currentLayer);
+                if (positionInLayer > 1) {
+                    var u = root.get(currentLayer.get(positionInLayer - 1));
+                    placeBlock(u, sink, shift, x, root, align);
+
+                    if (sink.get(node).equals(node)) {
+                        sink.put(node, sink.get(u));
+                    }
+
+                    if (sink.get(node) != sink.get(u)) {
+                        shift.put(sink.get(u), Math.min(shift.get(sink.get(u)), x.get(node) - x.get(u) - 1));
+                    } else {
+                        x.put(node, Math.max(x.get(node), x.get(u) + 1));
+                    }
+                }
+                w = align.get(w);
+            } while(!w.equals(node));
+        }
+    }
+
     private boolean incidentToInnerSegments(Node<String> node, int lowerLayer, int upperLayer) {
         return innerSegmentsStream()
                 .filter(rel ->
@@ -93,6 +190,9 @@ public class BrandesAndKoepf implements Algorithm<Map<Node<String>, Float>> {
     }
 
     private List<Node<String>> getUpperNeighbors(Node<String> node, List<Node<String>> searchSpace) {
+        if (searchSpace == null) {
+            return List.of();
+        }
         return innerSegmentsStream()
                 .filter(rel -> (searchSpace.contains(rel.source()) && rel.target().equals(node))
                         || (searchSpace.contains(rel.target()) && rel.source().equals(node)))
