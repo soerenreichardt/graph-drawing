@@ -3,6 +3,7 @@ package main;
 import algorithm.siguyama.Siguyama;
 import graph.Graph;
 import graph.Node;
+import io.XmlImporter;
 import ui.GraphDrawWindow;
 
 import java.awt.geom.Point2D;
@@ -28,6 +29,9 @@ public class SiguyamaTest {
         graph.addRelationship(node5, node6);
         graph.addRelationship(node5, node7);
         graph.addRelationship(node6, node7);
+
+//        XmlImporter xmlImporter = new XmlImporter("/Checkstyle-6.5.graphml", "implementation");
+//        Graph<String> graph = xmlImporter.parse();
 
         Map<Node<String>, Point2D.Float> nodePositions = new Siguyama(graph).compute();
 

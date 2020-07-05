@@ -17,4 +17,9 @@ public class Relationship<DATA> {
     public Node<DATA> target() {
         return target;
     }
+
+    @Override
+    public String toString() {
+        return "(" + source + ")-[ ]->(" + target + ")";
+    }
 }

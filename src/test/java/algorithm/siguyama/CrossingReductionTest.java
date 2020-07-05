@@ -75,12 +75,12 @@ class CrossingReductionTest {
         expectedDummyNames.forEach(expected -> assertTrue(actualDummyNames.contains(expected)));
     }
 
-    @Test
-    void computeCorrectAdjacencies() {
-        CrossingReduction crossingReduction = new CrossingReduction(graph, layerAssignment);
-        Map<Node<String>, Float> result = crossingReduction.compute();
-
-        var a = 1;
-    }
+//    @Test
+//    void computeCorrectAdjacencies() {
+//        CrossingReduction crossingReduction = new CrossingReduction(graph, layerAssignment);
+//        Map<Node<String>, Float> result = crossingReduction.compute().;
+//
+//        var a = 1;
+//    }
 
 }

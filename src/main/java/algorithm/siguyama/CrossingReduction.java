@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 public class CrossingReduction implements Algorithm<CrossingReduction> {
 
     public static final int IGNORE = -1;
-    public static final int ITERATIONS = 10;
+    public static final int ITERATIONS = 1;
     private Graph<String> graph;
     private Graph<String> properGraph;
 
@@ -45,6 +45,7 @@ public class CrossingReduction implements Algorithm<CrossingReduction> {
 
         for (int i = 0; i < ITERATIONS; i++) {
             for (int j = 0; j < blocks.size(); j++) {
+                System.out.println(j + " / " + blocks.size());
                 Block block = blocks.get(j);
                 siftingStep(blocks, block);
             }
@@ -75,6 +76,7 @@ public class CrossingReduction implements Algorithm<CrossingReduction> {
     }
 
     private void siftingStep(LinkedList<Block> blocks, Block block) {
+        System.out.println("Start :: siftingStep");
         blocks.remove(block);
         blocks.addFirst(block);
 
@@ -94,9 +96,11 @@ public class CrossingReduction implements Algorithm<CrossingReduction> {
 
         blocks.remove(block);
         blocks.add(bestBlockPosition, block);
+        System.out.println("Finish :: siftingStep");
     }
 
     private void sortAdjacencies(List<Block> blocks) {
+        System.out.println("Start :: sortAdjacencies");
         for (int i = 0; i < blocks.size(); i++) {
             Block block = blocks.get(i);
             block.position = i;
@@ -108,7 +112,9 @@ public class CrossingReduction implements Algorithm<CrossingReduction> {
             Node<String> lower = block.lower;
             Node<String> upper = block.upper;
 
+            AtomicInteger relCounter = new AtomicInteger(0);
             properGraph.relationships().forEach(rel -> {
+                relCounter.incrementAndGet();
                 Node<String> target = rel.target();
                 if (target == upper) {
                     Block sourceBlock = nodeBlockMapping.get(rel.source());
@@ -132,6 +138,7 @@ public class CrossingReduction implements Algorithm<CrossingReduction> {
             });
 
             properGraph.relationships().forEach(rel -> {
+                relCounter.incrementAndGet();
                 Node<String> source = rel.source();
                 if (source == lower) {
                     Block targetBlock = nodeBlockMapping.get(rel.target());
@@ -153,7 +160,9 @@ public class CrossingReduction implements Algorithm<CrossingReduction> {
                     }
                 }
             });
+//            System.out.println("  Processed " + relCounter.get() + " relationships");
         }
+        System.out.println("Finish :: sortAdjacencies");
     }
 
     enum Direction {

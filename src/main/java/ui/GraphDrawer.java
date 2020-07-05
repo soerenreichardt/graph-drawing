@@ -18,6 +18,9 @@ public class GraphDrawer {
             int xPosition = (int) nodePositions.get(node).x * NODE_SIZE;
             int yPosition = (int) nodePositions.get(node).y * (NODE_SIZE + LEVEL_OFFSET);
 
+
+            System.out.println(xPosition);
+            System.out.println(yPosition);
             g.fillOval(xPosition, yPosition, NODE_SIZE, NODE_SIZE);
 
             int lineOffset = NODE_SIZE / 2;
