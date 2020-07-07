@@ -2,6 +2,7 @@ package datastructure;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;
+import java.util.List;
 
 public class CursorBasedArray<T extends Comparable<T>> {
 
@@ -19,8 +20,16 @@ public class CursorBasedArray<T extends Comparable<T>> {
         this.cursor = 0;
     }
 
+    public int size() {
+        return size;
+    }
+
     public int cursorPosition() {
         return cursor;
+    }
+
+    public T emptyValue() {
+        return emptyValue;
     }
 
     public int add(T element) {
@@ -29,15 +38,18 @@ public class CursorBasedArray<T extends Comparable<T>> {
             nextFreeCursorPosition();
             return cursor - 1;
         } else {
-            throw throwIndexOutOfBoundsException(cursor);
+            throw indexOutOfBoundsException(cursor);
         }
     }
 
     public void add(int index, T element) {
         if (index < size && index >= 0) {
             array[index] = element;
+            if (index > cursor) {
+                cursor = index;
+            }
         } else {
-            throw throwIndexOutOfBoundsException(index);
+            throw indexOutOfBoundsException(index);
         }
     }
 
@@ -45,12 +57,17 @@ public class CursorBasedArray<T extends Comparable<T>> {
         if (index < size && index >= 0) {
             return array[index];
         } else {
-            throw throwIndexOutOfBoundsException(index);
+            throw indexOutOfBoundsException(index);
         }
     }
 
     public boolean contains(T element) {
-        return Arrays.asList(array).contains(element);
+        for (T value : array) {
+            if (value.equals(element)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public int find(T element) {
@@ -68,6 +85,10 @@ public class CursorBasedArray<T extends Comparable<T>> {
         cursor = 0;
     }
 
+    public List<T> asList() {
+        return Arrays.asList(array);
+    }
+
     private void nextFreeCursorPosition() {
         cursor++;
         while (cursor < size && !array[cursor].equals(emptyValue)) {
@@ -75,7 +96,7 @@ public class CursorBasedArray<T extends Comparable<T>> {
         }
     }
 
-    private IndexOutOfBoundsException throwIndexOutOfBoundsException(int index) {
+    private IndexOutOfBoundsException indexOutOfBoundsException(int index) {
         return new IndexOutOfBoundsException("Index " + index + " for array of size " + size);
     }
 }

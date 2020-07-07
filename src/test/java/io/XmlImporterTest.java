@@ -8,7 +8,7 @@ class XmlImporterTest {
 
     @Test
     void shouldParseNodes() {
-        XmlImporter xmlImporter = new XmlImporter("/Checkstyle-6.5.graphml");
+        XmlImporter xmlImporter = new XmlImporter("/Checkstyle-6.5.graphml", "implementation");
         xmlImporter.parse();
     }
 }

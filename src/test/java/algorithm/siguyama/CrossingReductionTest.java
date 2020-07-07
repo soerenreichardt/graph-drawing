@@ -5,7 +5,9 @@ import graph.Node;
 import graph.Relationship;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import ui.GraphDrawWindow;
 
+import java.awt.geom.Point2D;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -73,6 +75,23 @@ class CrossingReductionTest {
                 .collect(Collectors.toSet());
 
         expectedDummyNames.forEach(expected -> assertTrue(actualDummyNames.contains(expected)));
+    }
+
+    @Test
+    void draw() throws InterruptedException {
+        CrossingReduction crossingReduction = new CrossingReduction(graph, layerAssignment);
+        CrossingReduction computeResult = crossingReduction.compute();
+        Map<Node<String>, CrossingReduction.Block> nodeBlockMap = computeResult.nodeBlockMapping();
+        Map<Node<String>, Float> newLayerAssigment = computeResult.layerAssignment();
+
+        Map<Node<String>, Point2D.Float> nodeCoordinates = new HashMap<>();
+        computeResult.properGraph().forEachNode(node -> nodeCoordinates.put(node, new Point2D.Float(
+                (float) nodeBlockMap.get(node).position(),
+                newLayerAssigment.get(node)
+        )));
+
+        new GraphDrawWindow("test", 800, 600, computeResult.properGraph(), nodeCoordinates);
+        Thread.sleep(100000);
     }
 
 //    @Test

@@ -14,8 +14,10 @@ import java.util.stream.Collectors;
 
 public class CrossingReduction implements Algorithm<CrossingReduction> {
 
-    public static final int IGNORE = -1;
-    public static final int ITERATIONS = 1;
+    public static final int IGNORE = Integer.MIN_VALUE;
+    public static final int ITERATIONS = 10;
+    public static final String DUMMY_PREFIX = "dummy_";
+
     private Graph<String> graph;
     private Graph<String> properGraph;
 
@@ -86,7 +88,7 @@ public class CrossingReduction implements Algorithm<CrossingReduction> {
         int bestCrossings = 0;
         int bestBlockPosition = 0;
 
-        for (int i = 1; i < blocks.size() - 1; i++) {
+        for (int i = 1; i < blocks.size(); i++) {
             currentCrossings += siftingSwap(block, blocks.get(i), blocks);
             if (currentCrossings < bestCrossings) {
                 bestCrossings = currentCrossings;
@@ -112,25 +114,17 @@ public class CrossingReduction implements Algorithm<CrossingReduction> {
             Node<String> lower = block.lower;
             Node<String> upper = block.upper;
 
-            AtomicInteger relCounter = new AtomicInteger(0);
             properGraph.relationships().forEach(rel -> {
-                relCounter.incrementAndGet();
                 Node<String> target = rel.target();
                 if (target == upper) {
                     Block sourceBlock = nodeBlockMapping.get(rel.source());
 
-                    int currentPosition;
-                    if (sourceBlock.outgoingAdjacency.contains(target)) {
-                        currentPosition = sourceBlock.outgoingAdjacency.find(target);
-                    } else {
-                        currentPosition = sourceBlock.outgoingAdjacency.add(target);
-                    }
+                    int currentPosition = sourceBlock.outgoingAdjacency.add(target);
 
                     if (block.position < sourceBlock.position) {
                         positionCache.put(rel, currentPosition);
                     } else {
                         Integer position = positionCache.get(rel);
-                        if (position == null) return;
                         sourceBlock.outgoingIndex.add(currentPosition, position);
                         block.incomingIndex.add(position, currentPosition);
                     }
@@ -138,29 +132,21 @@ public class CrossingReduction implements Algorithm<CrossingReduction> {
             });
 
             properGraph.relationships().forEach(rel -> {
-                relCounter.incrementAndGet();
                 Node<String> source = rel.source();
                 if (source == lower) {
                     Block targetBlock = nodeBlockMapping.get(rel.target());
 
-                    int currentPosition;
-                    if (targetBlock.incomingAdjacency.contains(source)) {
-                        currentPosition = targetBlock.incomingAdjacency.find(source);
-                    } else {
-                        currentPosition = targetBlock.incomingAdjacency.add(source);
-                    }
+                    int currentPosition = targetBlock.incomingAdjacency.add(source);
 
                     if (block.position < targetBlock.position) {
                         positionCache.put(rel, currentPosition);
                     } else {
                         Integer position = positionCache.get(rel);
-                        if (position == null) return;
                         targetBlock.incomingIndex.add(currentPosition, position);
                         block.outgoingIndex.add(position, currentPosition);
                     }
                 }
             });
-//            System.out.println("  Processed " + relCounter.get() + " relationships");
         }
         System.out.println("Finish :: sortAdjacencies");
     }
@@ -197,6 +183,13 @@ public class CrossingReduction implements Algorithm<CrossingReduction> {
                 continue;
             }
             delta += uswap(nodeA.get(), nodeB.get(), direction);
+
+            var adjacencyA = direction == Direction.OUTGOING ? blockA.outgoingAdjacency : blockA.incomingAdjacency;
+            var adjacencyB = direction == Direction.OUTGOING ? blockB.outgoingAdjacency : blockB.incomingAdjacency;
+            var indicesA = direction == Direction.OUTGOING ? blockA.outgoingIndex : blockA.incomingIndex;
+            var indicesB = direction == Direction.OUTGOING ? blockB.outgoingIndex : blockB.incomingIndex;
+
+            updateAdjacency(adjacencyA, indicesA, adjacencyB, indicesB, direction);
         }
 
         int blockAIndex = blocksRef.indexOf(blockA);
@@ -216,8 +209,8 @@ public class CrossingReduction implements Algorithm<CrossingReduction> {
         int i = 0;
         int j = 0;
 
-        List<Node<String>> neighborsA = orderedSegmentNeighbors(nodeA, direction);
-        List<Node<String>> neighborsB = orderedSegmentNeighbors(nodeB, direction);
+        List<Node<String>> neighborsA = getNeighbors(nodeA, direction);
+        List<Node<String>> neighborsB = getNeighbors(nodeB, direction);
 
         while (i < neighborsA.size() && j < neighborsB.size()) {
             int blockAPosition = nodeBlockMapping.get(neighborsA.get(i)).position;
@@ -237,10 +230,48 @@ public class CrossingReduction implements Algorithm<CrossingReduction> {
         return c;
     }
 
+    private void updateAdjacency(
+            CursorBasedArray<Node<String>> adjacencyA,
+            CursorBasedArray<Integer> indicesA,
+            CursorBasedArray<Node<String>> adjacencyB,
+            CursorBasedArray<Integer> indicesB,
+            Direction direction
+    ) {
+        int i = 0;
+        int j = 0;
+        while (i < adjacencyA.cursorPosition() && j < adjacencyB.cursorPosition()) {
+            int adjacencyANodePosition = nodeBlockMapping.get(adjacencyA.get(i)).position();
+            int adjacencyBNodePosition = nodeBlockMapping.get(adjacencyB.get(j)).position();
+            if (adjacencyANodePosition < adjacencyBNodePosition) {
+                i++;
+            } else if(adjacencyANodePosition > adjacencyBNodePosition) {
+                j++;
+            } else {
+                var z = adjacencyA.get(i);
+                Integer nodeAIndex = indicesA.get(i);
+                Integer nodeBIndex = indicesB.get(j);
+                var zBlockAdjacency = direction == Direction.OUTGOING ? nodeBlockMapping.get(z).incomingAdjacency : nodeBlockMapping.get(z).outgoingAdjacency;
+                var zBlockIndices = direction == Direction.OUTGOING ? nodeBlockMapping.get(z).incomingIndex : nodeBlockMapping.get(z).outgoingIndex;
+                Node<String> tempNode = zBlockAdjacency.get(nodeAIndex);
+                zBlockAdjacency.add(nodeAIndex, zBlockAdjacency.get(nodeBIndex));
+                zBlockAdjacency.add(nodeBIndex, tempNode);
+
+                Integer tempIndex = zBlockIndices.get(nodeAIndex);
+                zBlockIndices.add(nodeAIndex, zBlockIndices.get(nodeBIndex));
+                zBlockIndices.add(nodeBIndex, tempIndex);
+
+                indicesA.add(i, indicesA.get(i) + 1);
+                indicesB.add(j, indicesB.get(j) - 1);
+                i++;
+                j++;
+            }
+        }
+    }
+
     private Pair<List<Node<String>>, List<Relationship<String>>> computeDummies() {
         List<Node<String>> nodes = new ArrayList<>();
         List<Relationship<String>> relationships = new ArrayList<>();
-        String nameTemplate = "(%s->%s): %s";
+        String nameTemplate = DUMMY_PREFIX + "(%s->%s): %s";
         MutableInt dummyNodeId = new MutableInt(-1);
         graph.forEachRelationship((source, target) -> {
             int span = span(source, target);
@@ -266,7 +297,8 @@ public class CrossingReduction implements Algorithm<CrossingReduction> {
                 relationships.add(dummyTargetRel);
                 dummyRels.add(dummyTargetRel);
 
-                this.dummies.put(source, dummyRels);
+                this.dummies.putIfAbsent(source, new ArrayList<>());
+                this.dummies.get(source).addAll(dummyRels);
             }
         });
 
@@ -301,7 +333,7 @@ public class CrossingReduction implements Algorithm<CrossingReduction> {
                 for (int i = 0; i < dummyRelationships.size() - 1; i++) {
                     innerNodes.add(dummyRelationships.get(i).target());
                 }
-                Block block = new Block(innerNodes, node, dummyRelationships.get(dummyRelationships.size() - 1).target(), blockPosition.getAndIncrement());
+                Block block = new Block(innerNodes, dummyRelationships.get(dummyRelationships.size() - 1).source(), dummyRelationships.get(0).target(), blockPosition.getAndIncrement());
                 blocks.add(block);
             }
         });
@@ -315,45 +347,16 @@ public class CrossingReduction implements Algorithm<CrossingReduction> {
         return (int) (layerAssignment.get(target) - layerAssignment.get(source));
     }
 
-    private List<Node<String>> orderedSegmentNeighbors(Node<String> node, Direction direction) {
-        return List.copyOf(segmentNeighbors(node, direction))
-                .stream()
-                .map(n -> Pair.of(n, nodeBlockMapping.get(n).position))
-                .sorted(Comparator.comparing(Pair::getRight))
-                .map(Pair::getLeft)
-                .collect(Collectors.toList());
+    private List<Node<String>> getNeighbors(Node<String> node, Direction direction) {
+        return getNeighbors(nodeBlockMapping.get(node), direction);
     }
 
-    private Set<Node<String>> segmentNeighbors(Node<String> node, Direction direction) {
-        switch (direction) {
-            case INCOMING:
-                return incomingSegmentNeighbors(node);
-            case OUTGOING:
-                return outgoingSegmentNeighbors(node);
-            default:
-                throw new IllegalArgumentException("Unknown direction: " + direction);
-        }
+    private List<Node<String>> getNeighbors(Block block, Direction direction) {
+        var adjacency = direction == Direction.OUTGOING ? block.outgoingAdjacency : block.incomingAdjacency;
+        return adjacency.asList().stream().filter(n -> !n.equals(adjacency.emptyValue())).collect(Collectors.toList());
     }
 
-    private Set<Node<String>> incomingSegmentNeighbors(Node<String> node) {
-        Set<Node<String>> incomingNeighbors = new HashSet<>();
-        properGraph.forEachRelationship((source, target) -> {
-            if (target == node) {
-                incomingNeighbors.add(source);
-            }
-        });
-
-        return incomingNeighbors;
-    }
-
-    private Set<Node<String>> outgoingSegmentNeighbors(Node<String> node) {
-        Set<Node<String>> outgoingNeighbors = new HashSet<>();
-        graph.forEachRelationship(node, (source, target) -> outgoingNeighbors.add(target));
-
-        return outgoingNeighbors;
-    }
-
-    public static final Node<String> EMPTY_NODE = new Node<>(-1, null);
+    public static final Node<String> EMPTY_NODE = new Node<>(IGNORE, null);
 
     public final class Block {
 
