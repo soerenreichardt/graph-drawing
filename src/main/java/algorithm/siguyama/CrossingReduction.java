@@ -23,7 +23,7 @@ public class CrossingReduction implements Algorithm<CrossingReduction> {
 
     private final Map<Node<String>, Float> layerAssignment;
 
-    private Map<Node<String>, List<Relationship<String>>> dummies;
+    private Map<Node<String>, Map<Node<String>, List<Relationship<String>>>> dummies;
 
     Map<Node<String>, Block> nodeBlockMapping;
 
@@ -61,7 +61,7 @@ public class CrossingReduction implements Algorithm<CrossingReduction> {
         return this;
     }
 
-    public Map<Node<String>, List<Relationship<String>>> dummies() {
+    public Map<Node<String>, Map<Node<String>, List<Relationship<String>>>> dummies() {
         return this.dummies;
     }
 
@@ -119,6 +119,7 @@ public class CrossingReduction implements Algorithm<CrossingReduction> {
                 if (target == upper) {
                     Block sourceBlock = nodeBlockMapping.get(rel.source());
 
+                    if (sourceBlock.outgoingAdjacency.contains(target)) return;
                     int currentPosition = sourceBlock.outgoingAdjacency.add(target);
 
                     if (block.position < sourceBlock.position) {
@@ -136,6 +137,7 @@ public class CrossingReduction implements Algorithm<CrossingReduction> {
                 if (source == lower) {
                     Block targetBlock = nodeBlockMapping.get(rel.target());
 
+                    if (targetBlock.incomingAdjacency.contains(source)) return;
                     int currentPosition = targetBlock.incomingAdjacency.add(source);
 
                     if (block.position < targetBlock.position) {
@@ -297,8 +299,9 @@ public class CrossingReduction implements Algorithm<CrossingReduction> {
                 relationships.add(dummyTargetRel);
                 dummyRels.add(dummyTargetRel);
 
-                this.dummies.putIfAbsent(source, new ArrayList<>());
-                this.dummies.get(source).addAll(dummyRels);
+                this.dummies.putIfAbsent(source, new HashMap<>());
+                this.dummies.get(source).putIfAbsent(target, new ArrayList<>());
+                this.dummies.get(source).get(target).addAll(dummyRels);
             }
         });
 
@@ -328,13 +331,14 @@ public class CrossingReduction implements Algorithm<CrossingReduction> {
         graph.forEachNode(node -> {
             blocks.add(new Block(node, blockPosition.getAndIncrement()));
             if (dummies.containsKey(node)) {
-                List<Relationship<String>> dummyRelationships = dummies.get(node);
-                List<Node<String>> innerNodes = new ArrayList<>();
-                for (int i = 0; i < dummyRelationships.size() - 1; i++) {
-                    innerNodes.add(dummyRelationships.get(i).target());
+                for (List<Relationship<String>> dummyRelationships : dummies.get(node).values()) {
+                    List<Node<String>> innerNodes = new ArrayList<>();
+                    for (int i = 0; i < dummyRelationships.size() - 1; i++) {
+                        innerNodes.add(dummyRelationships.get(i).target());
+                    }
+                    Block block = new Block(innerNodes, dummyRelationships.get(dummyRelationships.size() - 1).source(), dummyRelationships.get(0).target(), blockPosition.getAndIncrement());
+                    blocks.add(block);
                 }
-                Block block = new Block(innerNodes, dummyRelationships.get(dummyRelationships.size() - 1).source(), dummyRelationships.get(0).target(), blockPosition.getAndIncrement());
-                blocks.add(block);
             }
         });
 
