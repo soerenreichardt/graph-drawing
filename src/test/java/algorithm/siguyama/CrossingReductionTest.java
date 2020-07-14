@@ -8,10 +8,7 @@ import org.junit.jupiter.api.Test;
 import ui.GraphDrawWindow;
 
 import java.awt.geom.Point2D;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -64,11 +61,13 @@ class CrossingReductionTest {
                 "(2->7): 2",
                 "(5->7): 0"
         );
-        Map<Node<String>, List<Relationship<String>>> actualDummies = crossingReduction.dummies();
+        Map<Node<String>, Map<Node<String>, List<Relationship<String>>>> actualDummies = crossingReduction.dummies();
         var actualDummyNames = actualDummies
-                .entrySet()
+                .values()
                 .stream()
-                .flatMap(entry -> entry.getValue().stream())
+                .map(Map::values)
+                .flatMap(Collection::stream)
+                .flatMap(List::stream)
                 .flatMap(rel -> Stream.of(rel.source(), rel.target()))
                 .filter(node -> !graph.containsNode(node))
                 .map(Node::data)
@@ -90,7 +89,7 @@ class CrossingReductionTest {
                 newLayerAssigment.get(node)
         )));
 
-        new GraphDrawWindow("test", 800, 600, computeResult.properGraph(), nodeCoordinates);
+        new GraphDrawWindow("test", computeResult.properGraph(), nodeCoordinates);
         Thread.sleep(100000);
     }
 

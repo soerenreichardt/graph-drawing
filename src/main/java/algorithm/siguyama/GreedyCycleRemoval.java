@@ -4,24 +4,22 @@ import algorithm.Algorithm;
 import graph.Graph;
 import graph.Node;
 import graph.Relationship;
+import org.apache.commons.lang3.tuple.Pair;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
-public class GreedyEdgeRemoval implements Algorithm<Graph<String>> {
+public class GreedyCycleRemoval implements Algorithm<Pair<Graph<String>, List<Node<String>>>> {
 
     Graph<String> graph;
 
-    public GreedyEdgeRemoval(Graph<String> graph) {
+    public GreedyCycleRemoval(Graph<String> graph) {
         this.graph = graph;
     }
 
-    public Graph<String> compute() {
+    public Pair<Graph<String>, List<Node<String>>> compute() {
         List<Node<String>> leftList = new ArrayList<>();
-        List<Node<String>> rightList = new ArrayList<>();
+        LinkedList<Node<String>> rightList = new LinkedList<>();
 
         List<Node<String>> nodes = graph.nodes();
         List<Node<String>> modifiedNodes = graph.nodes();
@@ -37,7 +35,7 @@ public class GreedyEdgeRemoval implements Algorithm<Graph<String>> {
                     relationships.removeAll(outgoingRelationships);
                 }
                 if (outDegree(relationships, node) == 0) {
-                    rightList.add(node);
+                    rightList.addFirst(node);
                     modifiedNodes.remove(node);
                     var incomingRelationships = getIncomingRelationships(relationships, node);
                     acyclicRelationships.addAll(incomingRelationships);
@@ -55,6 +53,7 @@ public class GreedyEdgeRemoval implements Algorithm<Graph<String>> {
                     }
 
                     modifiedNodes.remove(nodeToRemove);
+                    leftList.add(nodeToRemove);
                     var outgoingRelationships = getOutgoingRelationships(relationships, nodeToRemove);
                     var incomingRelationships = getIncomingRelationships(relationships, nodeToRemove);
 
@@ -66,10 +65,11 @@ public class GreedyEdgeRemoval implements Algorithm<Graph<String>> {
             nodes = new ArrayList<>(modifiedNodes);
         }
 
-        Set<Node<String>> combinedNodeLists = new HashSet<>();
+        List<Node<String>> combinedNodeLists = new ArrayList<>();
         combinedNodeLists.addAll(leftList);
         combinedNodeLists.addAll(rightList);
-        return buildGraphFromLists(combinedNodeLists, acyclicRelationships);
+        Graph<String> graph = buildGraphFromLists(Set.copyOf(combinedNodeLists), acyclicRelationships);
+        return Pair.of(graph, combinedNodeLists);
     }
 
     private List<Relationship<String>> getOutgoingRelationships(List<Relationship<String>> relationships, Node<String> node) {
@@ -92,6 +92,6 @@ public class GreedyEdgeRemoval implements Algorithm<Graph<String>> {
         Graph<String> acyclicGraph = new Graph<>();
         nodes.forEach(acyclicGraph::addNode);
         relationships.forEach(acyclicGraph::addRelationship);
-        return acyclicGraph;
+        return acyclicGraph.deduplicateRelationships();
     }
 }

@@ -25,7 +25,7 @@ public class BrandesAndKoepf implements Algorithm<Map<Node<String>, Float>> {
     }
 
     private final Graph<String> properGraph;
-    private final Map<Node<String>, List<Relationship<String>>> innerSegments;
+    private final Map<Node<String>, Map<Node<String>, List<Relationship<String>>>> innerSegments;
     private final Map<Node<String>, Float> layerAssignment;
 
     private final Map<Integer, List<Node<String>>> orderedNodes;
@@ -33,25 +33,25 @@ public class BrandesAndKoepf implements Algorithm<Map<Node<String>, Float>> {
     public BrandesAndKoepf(
             Graph<String> properGraph,
             Map<Node<String>, CrossingReduction.Block> nodeBlockMapping,
-            Map<Node<String>, List<Relationship<String>>> innerSegments,
+            Map<Node<String>, Map<Node<String>, List<Relationship<String>>>> innerSegments,
             Map<Node<String>, Float> layerAssignment
     ) {
         this.properGraph = properGraph;
         this.innerSegments = innerSegments;
         this.layerAssignment = layerAssignment;
 
-        orderedNodes = new TreeMap<>(Comparator.comparingInt(entry -> entry));
+        orderedNodes = new TreeMap<>(Comparator.comparingInt(integer -> -integer.intValue()));
         layerAssignment.forEach((node, layer) -> {
             orderedNodes.putIfAbsent(layer.intValue(), new ArrayList<>());
             orderedNodes.get(layer.intValue()).add(node);
         });
 
-        orderedNodes.forEach((layer, nodes) -> nodes.sort(Comparator.comparingInt(node-> nodeBlockMapping.get(node).position)));
+        orderedNodes.forEach((layer, nodes) -> nodes.sort(Comparator.comparingInt(node -> nodeBlockMapping.get(node).position)));
     }
 
     @Override
     public Map<Node<String>, Float> compute() {
-        var markedSegments = markType1Conflicts();
+        Set<Relationship<String>> markedSegments = markType1Conflicts();
 
         List<Map<Node<String>, Integer>> directionalCoordinates = new ArrayList<>(4);
         for (HorizontalDirection horizontalDirection : HorizontalDirection.values()) {
@@ -63,7 +63,7 @@ public class BrandesAndKoepf implements Algorithm<Map<Node<String>, Float>> {
             }
         }
 
-        return directionalCoordinates.get(3)
+        return directionalCoordinates.get(0)
                 .entrySet()
                 .stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().floatValue()));
@@ -72,7 +72,7 @@ public class BrandesAndKoepf implements Algorithm<Map<Node<String>, Float>> {
     private Set<Relationship<String>> markType1Conflicts() {
         Set<Relationship<String>> markedSegments = new HashSet<>();
         List<Integer> layers = List.copyOf(orderedNodes.keySet());
-        for (int i = 0; i < layers.size() - 1; i++) {
+        for (int i = 2; i < layers.size() - 1; i++) {
             int k_0 = 0;
             int l = 1;
             List<Node<String>> nextLayerNodes = orderedNodes.get(layers.get(i + 1));
@@ -114,26 +114,19 @@ public class BrandesAndKoepf implements Algorithm<Map<Node<String>, Float>> {
         }
 
         List<Integer> layers = List.copyOf(orderedNodes.keySet());
-        for (int i = 0; i < layers.size(); i++) {
+        for (int i = 1; i < layers.size(); i++) {
             int r = 0;
             List<Node<String>> currentLayer = orderedNodes.get(layers.get(i));
-            for (int idInLayer = 0; idInLayer < currentLayer.size(); idInLayer++) {
+            for (int idInLayer = 1; idInLayer < currentLayer.size(); idInLayer++) {
                 Node<String> currentNode = currentLayer.get(horizontalDirection == HorizontalDirection.LEFT_TO_RIGHT ? currentLayer.size() - idInLayer - 1 : idInLayer);
-                List<Node<String>> neighbors = i > 1
-                            ? getNeighbors(currentNode, orderedNodes.get(layers.get(verticalDirection == VerticalDirection.BOTTOM_UP ? layers.size() - i - 1 : i - 1)))
-                            : List.of();
-//                if (verticalDirection == VerticalDirection.BOTTOM_UP) {
-//                    neighbors = i > 1
-//                            ? getNeighbors(currentNode, orderedNodes.get(layers.get(i - 1)))
-//                            : List.of();
-//                } else {
-//                    neighbors = i < layers.size() - 1
-//                            ? getNeighbors(currentNode, orderedNodes.get(layers.get(i + 1)))
-//                            : List.of();
-//                }
+                List<Node<String>> neighbors = getNeighbors(currentNode, orderedNodes.get(layers.get(verticalDirection == VerticalDirection.BOTTOM_UP ? layers.size() - i - 1 : i - 1)));
                 if (!neighbors.isEmpty()) {
                     int d = neighbors.size();
-                    for (int m = (int) Math.floor(((double) d + 1.0D) / 2.0D); m < Math.ceil(((double) d + 1.0D) / 2.0D); m++) {
+
+                    int medianLeft = (int) Math.floor(((double) d + 1.0D) / 2.0D);
+                    int medianRight = (int) Math.ceil(((double) d + 1.0D) / 2.0D);
+
+                    for (int m = medianLeft - 1; m < medianRight; m++) {
                         if (align.get(currentNode).equals(currentNode)) {
                             Node<String> medianUpperNeighbor = neighbors.get(m);
                             boolean isMarkedSegment = markedSegments.contains(findSegment(medianUpperNeighbor, currentNode));
@@ -217,9 +210,7 @@ public class BrandesAndKoepf implements Algorithm<Map<Node<String>, Float>> {
                 .filter(rel ->
                         layerAssignment.get(rel.source()) == lowerLayer && layerAssignment.get(rel.target()) == upperLayer
                                 || layerAssignment.get(rel.source()) == upperLayer && layerAssignment.get(rel.target()) == lowerLayer
-                )
-                .filter(rel -> rel.source().equals(node) || rel.target().equals(node))
-                .count() != 0;
+                ).anyMatch(rel -> rel.source().equals(node) || rel.target().equals(node));
     }
 
     private List<Node<String>> getNeighbors(Node<String> node, List<Node<String>> searchSpace) {
@@ -244,6 +235,8 @@ public class BrandesAndKoepf implements Algorithm<Map<Node<String>, Float>> {
         return innerSegments
                 .values()
                 .stream()
+                .map(Map::values)
+                .flatMap(Collection::stream)
                 .flatMap(List::stream);
     }
 

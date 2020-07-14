@@ -11,6 +11,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
 
@@ -43,7 +44,7 @@ public class XmlImporter {
 
     private Graph<String> parseGraphMl() {
         Graph<String> graph = new Graph<>();
-        NodeList nodes = document.getElementsByTagName("node");
+        Map<String, Node<String>> seenNodes = new HashMap<>();
 
         NodeList relationships = document.getElementsByTagName("edge");
         for (int i = 0; i < relationships.getLength(); i++) {
@@ -52,10 +53,24 @@ public class XmlImporter {
             String sourceName = relationships.item(i).getAttributes().getNamedItem("source").getNodeValue();
             String targetName = relationships.item(i).getAttributes().getNamedItem("target").getNodeValue();
 
-            Node<String> sourceNode = graph.addNode(sourceName);
-            Node<String> targetNode = graph.addNode(targetName);
+            Node<String> sourceNode;
+            if (seenNodes.containsKey(sourceName)) {
+                sourceNode = seenNodes.get(sourceName);
+            } else {
+                sourceNode = graph.addNode(sourceName);
+                seenNodes.put(sourceName, sourceNode);
+            }
+
+            Node<String> targetNode;
+            if (seenNodes.containsKey(targetName)) {
+                targetNode = seenNodes.get(targetName);
+            } else {
+                targetNode = graph.addNode(targetName);
+                seenNodes.put(targetName, targetNode);
+            }
             graph.addRelationship(sourceNode, targetNode);
         }
+        System.out.println("Done loading the graph");
         return graph;
     }
 }

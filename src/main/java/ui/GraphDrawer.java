@@ -14,32 +14,54 @@ public class GraphDrawer {
     public static final int NODE_SIZE = 40;
     public static final int LEVEL_OFFSET = 15;
 
-    public static void drawGraph(Graph<String> graph, Map<Node<String>, Point2D.Float> nodePositions, Graphics2D g) {
+    int scaledNodeSize;
+    int scaledLevelOffset;
+    private Integer yOffset;
+    private Integer xOffset;
+    private final Map<Node<String>, Point2D.Float> nodePositions;
+
+    public GraphDrawer(double scale, Integer yOffset, Integer xOffset, float zoom, Map<Node<String>, Point2D.Float> nodePositions) {
+        this.scaledNodeSize = (int)(NODE_SIZE * scale * zoom);
+        this.scaledLevelOffset = (int)(LEVEL_OFFSET * scale * zoom);
+        this.yOffset = yOffset;
+        this.xOffset = xOffset;
+        this.nodePositions = nodePositions;
+    }
+
+    public void drawGraph(Graph<String> graph, Graphics2D g) {
         g.setColor(Color.DARK_GRAY);
         graph.forEachNode(node -> {
-            int xPosition = (int) nodePositions.get(node).x * NODE_SIZE;
-            int yPosition = (int) nodePositions.get(node).y * (NODE_SIZE + LEVEL_OFFSET);
+            System.out.println(node.data() + ": " + nodePositions.get(node));
+            int xPosition = getNodeXPosition(node);
+            int yPosition = getNodeYPosition(node);
+//            System.out.println(xPosition);
+//            System.out.println(yPosition + "\n");
 
             if (!node.data().contains(DUMMY_PREFIX)) {
-                System.out.println(xPosition);
-                System.out.println(yPosition);
-                g.fillOval(xPosition, yPosition, NODE_SIZE, NODE_SIZE);
+                g.fillOval(xPosition, yPosition, scaledNodeSize, scaledNodeSize);
             }
 
-            int lineOffset = NODE_SIZE / 2;
+            int lineOffset = scaledNodeSize / 2;
             graph.forEachRelationship(node, (source, target) -> {
-                int parentXPosition = (int) nodePositions.get(target).x * NODE_SIZE + lineOffset;
-                int parentYPosition = (int) nodePositions.get(target).y * (NODE_SIZE + LEVEL_OFFSET) + lineOffset;
-                g.drawLine(xPosition + lineOffset, yPosition + lineOffset, parentXPosition, parentYPosition);
-//                g.drawLine(xPosition + lineOffset - 1, yPosition + lineOffset - 1, parentXPosition, parentYPosition);
-//                g.drawLine(xPosition + lineOffset + 1, yPosition + lineOffset + 1, parentXPosition, parentYPosition);
+                int neighborXPosition = getNodeXPosition(target) + lineOffset;
+                int neighborYPosition = getNodeYPosition(target) + lineOffset;
+                g.drawLine(xPosition + lineOffset, yPosition + lineOffset, neighborXPosition, neighborYPosition);
             });
 
-            if (!node.data().contains(DUMMY_PREFIX)) {
-                g.setColor(Color.WHITE);
-                g.drawString(node.data(), xPosition + (NODE_SIZE / 2), yPosition + (NODE_SIZE / 2));
-                g.setColor(Color.DARK_GRAY);
-            }
+//            if (!node.data().contains(DUMMY_PREFIX)) {
+//                g.setColor(Color.WHITE);
+//                g.drawString(node.data(), xPosition + (scaledNodeSize / 2), yPosition + (scaledNodeSize / 2));
+//                g.setColor(Color.DARK_GRAY);
+//            }
         });
     }
+
+    private int getNodeXPosition(Node<String> node) {
+        return (int) (nodePositions.get(node).x - xOffset) * scaledNodeSize;
+    }
+
+    private int getNodeYPosition(Node<String> node) {
+        return (int) (nodePositions.get(node).y - yOffset) * (scaledNodeSize + scaledLevelOffset);
+    }
+
 }

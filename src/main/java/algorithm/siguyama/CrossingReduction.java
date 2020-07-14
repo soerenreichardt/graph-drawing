@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 public class CrossingReduction implements Algorithm<CrossingReduction> {
 
     public static final int IGNORE = Integer.MIN_VALUE;
-    public static final int ITERATIONS = 10;
+    public static final int ITERATIONS = 1;
     public static final String DUMMY_PREFIX = "dummy_";
 
     private Graph<String> graph;
@@ -348,7 +348,7 @@ public class CrossingReduction implements Algorithm<CrossingReduction> {
 
     private int span(Node<String> source, Node<String> target) {
         // TODO might be Math.abs(...)
-        return (int) (layerAssignment.get(target) - layerAssignment.get(source));
+        return (int) Math.abs(layerAssignment.get(target) - layerAssignment.get(source));
     }
 
     private List<Node<String>> getNeighbors(Node<String> node, Direction direction) {

@@ -67,6 +67,14 @@ public class Graph<DATA> {
         return relationship;
     }
 
+    public Graph<DATA> deduplicateRelationships() {
+        for (Long sourceId : this.relationships.keySet()) {
+            List<Relationship<DATA>> relationships = this.relationships.get(sourceId);
+            this.relationships.put(sourceId, relationships.stream().distinct().collect(Collectors.toList()));
+        }
+        return this;
+    }
+
     public void forEachNode(NodeVisitor<DATA> visitor) {
         this.nodes.values().forEach(visitor::accept);
     }
